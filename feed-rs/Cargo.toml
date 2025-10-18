@@ -28,4 +28,4 @@ uuid = { version = "1.18", features = ["v4"] }
 
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }
-nursery = { level = "warn", priority = -1 }
+# nursery = { level = "warn", priority = -1 }

@@ -65,9 +65,7 @@
 //! use feed_rs::parser;
 //!
 //! let file = File::open("example.xml").unwrap();
-//! let parser = parser::Builder::new()
-//!     .sanitize_content(true)
-//!     .build();
+//! let parser = parser::Builder::new().build();
 //! let feed = parser.parse(BufReader::new(file)).unwrap();
 //! ```
 

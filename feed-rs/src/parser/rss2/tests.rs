@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use chrono::{TimeZone, Utc};
-use mediatype::{names, MediaType};
+use mediatype::{MediaType, names};
 use url::Url;
 
 use crate::model::*;
@@ -125,7 +125,7 @@ fn test_example_4() {
     // Parse the feed; note that the result with sanitization active differs from the expected,
     // so we will explicitly disable sanitization for this test.
     let test_data = test::fixture_as_string("rss2/rss_2.0_example_4.xml");
-    let p = parser::Builder::new().sanitize_content(false).build();
+    let p = parser::Builder::new().build();
     let actual = p.parse(test_data.as_bytes()).unwrap();
 
     // Expected feed
@@ -222,7 +222,7 @@ fn test_example_6() {
     // Parse the feed; note that the result with sanitization active differs from the expected,
     // so we will explicitly disable sanitization for this test.
     let test_data = test::fixture_as_string("rss2/rss_2.0_example_6.xml");
-    let p = parser::Builder::new().sanitize_content(false).build();
+    let p = parser::Builder::new().build();
     let actual = p.parse(test_data.as_bytes()).unwrap();
 
     // Expected feed
@@ -269,7 +269,7 @@ fn test_spec_1() {
     // Parse the feed; note that the result with sanitization active differs from the expected,
     // so we will explicitly disable sanitization for this test.
     let test_data = test::fixture_as_string("rss2/rss_2.0_spec_1.xml");
-    let p = parser::Builder::new().sanitize_content(false).build();
+    let p = parser::Builder::new().build();
     let actual = p.parse(test_data.as_bytes()).unwrap();
 
     // Expected feed
@@ -342,11 +342,13 @@ fn test_heated() {
     let test_data = test::fixture_as_raw("rss2/rss_2.0_heated.xml");
     let feed = parser::parse(test_data.as_slice()).unwrap();
     let content = &feed.entries[0].content.as_ref().unwrap();
-    assert!(content
-        .body
-        .as_ref()
-        .unwrap()
-        .contains("I have some good news and some bad news"));
+    assert!(
+        content
+            .body
+            .as_ref()
+            .unwrap()
+            .contains("I have some good news and some bad news")
+    );
     assert_eq!(
         content.content_type,
         MediaType::new(names::TEXT, names::HTML)
@@ -373,7 +375,7 @@ fn test_spiegel() {
     // Parse the feed; note that the result with sanitization active differs from the expected,
     // so we will explicitly disable sanitization for this test.
     let test_data = test::fixture_as_string("rss2/rss_2.0_spiegel.xml");
-    let p = parser::Builder::new().sanitize_content(false).build();
+    let p = parser::Builder::new().build();
     let actual = p.parse(test_data.as_bytes()).unwrap();
 
     // Expected feed
@@ -519,7 +521,7 @@ fn test_ch9() {
     // Parse the feed; note that the result with sanitization active differs from the expected,
     // so we will explicitly disable sanitization for this test.
     let test_data = test::fixture_as_string("rss2/rss_2.0_ch9.xml");
-    let p = parser::Builder::new().sanitize_content(false).build();
+    let p = parser::Builder::new().build();
     let actual = p.parse(test_data.as_bytes()).unwrap();
 
     // Expected feed
@@ -778,27 +780,33 @@ fn test_trim_whitespace_text_nodes() {
     let test_data = test::fixture_as_string("rss2/rss_2.0_nightvale.xml");
     let actual = parser::parse(test_data.as_bytes()).unwrap();
 
-    assert!(actual
-        .description
-        .unwrap()
-        .content
-        .starts_with("<p>Twice-monthly community updates"));
+    assert!(
+        actual
+            .description
+            .unwrap()
+            .content
+            .starts_with("<p>Twice-monthly community updates")
+    );
 
     let entry = actual.entries.first().expect("feed has 1 entry");
-    assert!(entry
-        .summary
-        .as_ref()
-        .unwrap()
-        .content
-        .starts_with("<p>The University of What It Is"));
+    assert!(
+        entry
+            .summary
+            .as_ref()
+            .unwrap()
+            .content
+            .starts_with("<p>The University of What It Is")
+    );
 
     let media = entry.media.first().expect("entry has 1 media item");
-    assert!(media
-        .description
-        .as_ref()
-        .unwrap()
-        .content
-        .starts_with("The University of What It Is"));
+    assert!(
+        media
+            .description
+            .as_ref()
+            .unwrap()
+            .content
+            .starts_with("The University of What It Is")
+    );
 }
 
 // Verifies we use DublinCore date as entry published date if present

@@ -228,7 +228,6 @@ pub fn parse<R: Read>(source: R) -> ParseFeedResult<model::Feed> {
 pub struct Builder {
     base_uri: Option<String>,
     id_generator: Box<IdGenerator>,
-    sanitize_content: bool,
     timestamp_parser: Box<TimestampParser>,
 }
 
@@ -283,14 +282,6 @@ impl Builder {
         })
     }
 
-    /// Registers the flag for sanitizing content when the "sanitize" feature
-    /// is available
-    #[must_use]
-    pub const fn sanitize_content(mut self, flag: bool) -> Self {
-        self.sanitize_content = flag;
-        self
-    }
-
     /// Registers a custom timestamp parser
     pub fn timestamp_parser<F>(mut self, ts_parser: F) -> Self
     where
@@ -307,7 +298,6 @@ impl Default for Builder {
         Self {
             base_uri: None,
             id_generator: Box::new(generate_id),
-            sanitize_content: true,
             timestamp_parser: Box::new(util::parse_timestamp_lenient),
         }
     }

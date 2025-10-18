@@ -65,18 +65,22 @@ fn test_0_91_encoding_2() {
         feed.title.unwrap().content,
         "Tribunal de Justiça do Estado do Rio Grande do Sul"
     );
-    assert!(feed.entries[0]
-        .title
-        .as_ref()
-        .unwrap()
-        .content
-        .contains("atuação"));
-    assert!(feed.entries[0]
-        .summary
-        .as_ref()
-        .unwrap()
-        .content
-        .contains("prevenção"));
+    assert!(
+        feed.entries[0]
+            .title
+            .as_ref()
+            .unwrap()
+            .content
+            .contains("atuação")
+    );
+    assert!(
+        feed.entries[0]
+            .summary
+            .as_ref()
+            .unwrap()
+            .content
+            .contains("prevenção")
+    );
 }
 
 // Verifies that we can handle feeds without IDs and links
@@ -106,7 +110,7 @@ fn test_0_92_spec_1() {
     // Parse the feed; note that the result with sanitization active differs from the expected,
     // so we will explicitly disable sanitization for this test.
     let test_data = test::fixture_as_string("rss0/rss_0.92_spec_1.xml");
-    let p = parser::Builder::new().sanitize_content(false).build();
+    let p = parser::Builder::new().build();
     let actual = p.parse(test_data.as_bytes()).unwrap();
 
     // Expected feed

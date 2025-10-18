@@ -109,7 +109,7 @@ fn test_example_3() {
     // Parse the feed; note that the result with sanitization active differs from the expected,
     // so we will explicitly disable sanitization for this test.
     let test_data = test::fixture_as_string("atom/atom_example_3.xml");
-    let p = parser::Builder::new().sanitize_content(false).build();
+    let p = parser::Builder::new().build();
     let actual = p.parse(test_data.as_bytes()).unwrap();
 
     let expected = Feed::new(FeedType::Atom)
@@ -161,7 +161,7 @@ fn test_example_4() {
     // Parse the feed; note that the result with sanitization active differs from the expected,
     // so we will explicitly disable sanitization for this test.
     let test_data = test::fixture_as_string("atom/atom_example_4.xml");
-    let p = parser::Builder::new().sanitize_content(false).build();
+    let p = parser::Builder::new().build();
     let actual = p.parse(test_data.as_bytes()).unwrap();
 
     let expected = Feed::new(FeedType::Atom)
@@ -191,7 +191,7 @@ fn test_example_5() {
     // Parse the feed; note that the result with sanitization active differs from the expected,
     // so we will explicitly disable sanitization for this test.
     let test_data = test::fixture_as_string("atom/atom_example_5.xml");
-    let p = parser::Builder::new().sanitize_content(false).build();
+    let p = parser::Builder::new().build();
     let actual = p.parse(test_data.as_bytes()).unwrap();
 
     let expected = Feed::new(FeedType::Atom)
@@ -357,7 +357,7 @@ fn test_example_7() {
     // Parse the feed; note that the result with sanitization active differs from the expected,
     // so we will explicitly disable sanitization for this test.
     let test_data = test::fixture_as_string("atom/atom_example_7.xml");
-    let p = parser::Builder::new().sanitize_content(false).build();
+    let p = parser::Builder::new().build();
     let feed = p.parse(test_data.as_bytes()).unwrap();
     let body = feed
         .entries
@@ -575,14 +575,16 @@ fn test_reddit() {
 fn test_scattered() {
     let test_data = test::fixture_as_string("atom/atom_scattered.xml");
     let actual = parser::parse(test_data.as_bytes()).unwrap().id("");
-    assert!(actual.entries[0]
-        .content
-        .as_ref()
-        .unwrap()
-        .body
-        .as_ref()
-        .unwrap()
-        .contains("there are no strings on me"));
+    assert!(
+        actual.entries[0]
+            .content
+            .as_ref()
+            .unwrap()
+            .body
+            .as_ref()
+            .unwrap()
+            .contains("there are no strings on me")
+    );
 }
 
 // Handle Atom atomOutOfLineContent
@@ -614,9 +616,11 @@ fn test_atom_content_src() {
 fn test_atom_content_xml_base() {
     let test_data = test::fixture_as_string("atom/atom_xml_base.xml");
     let actual = parser::parse(test_data.as_bytes()).unwrap();
-    assert!(actual.entries[0]
-        .base
-        .as_ref()
-        .unwrap()
-        .eq("https://numi.st/post/2022/travel-uke/"));
+    assert!(
+        actual.entries[0]
+            .base
+            .as_ref()
+            .unwrap()
+            .eq("https://numi.st/post/2022/travel-uke/")
+    );
 }

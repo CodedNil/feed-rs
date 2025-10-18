@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use chrono::{DateTime, Utc};
-use mediatype::{names, MediaTypeBuf};
+use mediatype::{MediaTypeBuf, names};
 use serde::Serialize;
 use url::Url;
 
@@ -230,8 +230,7 @@ pub enum FeedType {
 }
 
 /// An item within a feed
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-#[derive(Default)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Default)]
 pub struct Entry {
     /// A unique identifier for this item with a feed. If not supplied it is initialised to a hash of the first link or a UUID if not available.
     /// * Atom (required): Identifies the entry using a universally unique and permanent URI.
@@ -306,7 +305,6 @@ pub struct Entry {
     /// references found within the scope on the item
     pub base: Option<String>,
 }
-
 
 #[cfg(test)]
 impl Entry {
@@ -406,7 +404,8 @@ pub struct Category {
 }
 
 impl Category {
-    #[must_use] pub fn new(term: &str) -> Self {
+    #[must_use]
+    pub fn new(term: &str) -> Self {
         Self {
             term: term.trim().into(),
             scheme: None,
@@ -459,24 +458,6 @@ impl Default for Content {
             content_type: MediaTypeBuf::new(names::TEXT, names::PLAIN),
             length: None,
             src: None,
-        }
-    }
-}
-
-impl Content {
-    pub const fn sanitize(&mut self) {
-        // We're dealing with a broader variety of possible content types than
-        // in Text, since the possibility exists that we'll be dealing with a base64-encode
-        // image or the like, so we'll target a correspondingly tighter set: text/html
-        // and application/xhtml+xml.
-        #[cfg(feature = "sanitize")]
-        {
-            let content_type = self.content_type.as_str();
-            if content_type == "text/html" || content_type == "application/xhtml+xml" {
-                if let Some(body) = &self.body {
-                    self.body = Some(ammonia::clean(body.as_str()));
-                }
-            }
         }
     }
 }
@@ -891,7 +872,8 @@ impl MediaRating {
         }
     }
 
-    #[must_use] pub fn urn(mut self, urn: &str) -> Self {
+    #[must_use]
+    pub fn urn(mut self, urn: &str) -> Self {
         self.urn = urn.to_string();
         self
     }
@@ -957,7 +939,8 @@ impl Person {
         }
     }
 
-    #[must_use] pub fn email(mut self, email: &str) -> Self {
+    #[must_use]
+    pub fn email(mut self, email: &str) -> Self {
         self.email = Some(email.to_owned());
         self
     }
@@ -993,15 +976,6 @@ impl Text {
             content_type: MediaTypeBuf::new(names::TEXT, names::HTML),
             src: None,
             content: content.trim().to_string(),
-        }
-    }
-
-    pub const fn sanitize(&mut self) {
-        #[cfg(feature = "sanitize")]
-        {
-            if self.content_type.as_str() != "text/plain" {
-                self.content = ammonia::clean(&self.content);
-            }
         }
     }
 }
