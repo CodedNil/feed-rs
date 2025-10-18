@@ -2,14 +2,14 @@ use std::io::BufRead;
 
 use crate::model::{Content, Entry, Feed, FeedType, Image, Link, Person, Text};
 use crate::parser::util::if_some_then;
-use crate::parser::{util, ParseFeedResult, Parser};
+use crate::parser::{ParseFeedResult, Parser, util};
 use crate::xml::{Element, NS};
 
 #[cfg(test)]
 mod tests;
 
 /// Parses an RSS 1.0 feed into our model
-pub(crate) fn parse<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedResult<Feed> {
+pub fn parse<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedResult<Feed> {
     let mut feed = Feed::new(FeedType::RSS1);
 
     for child in root.children() {
@@ -20,7 +20,7 @@ pub(crate) fn parse<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedR
             (NS::RSS, "image") => feed.logo = handle_image(child)?,
 
             (NS::RSS, "item") => if_some_then(handle_item(parser, child)?, |entry| {
-                feed.entries.push(entry)
+                feed.entries.push(entry);
             }),
 
             // Nothing required for unknown elements
@@ -43,13 +43,13 @@ fn handle_channel<R: BufRead>(
             (NS::RSS, "title") => feed.title = util::handle_text(child),
 
             (NS::RSS, "link") => {
-                if_some_then(util::handle_link(child), |link| feed.links.push(link))
+                if_some_then(util::handle_link(child), |link| feed.links.push(link));
             }
 
             (NS::RSS, "description") => feed.description = util::handle_text(child),
 
             (NS::DublinCore, "creator") => if_some_then(child.child_as_text(), |name| {
-                feed.authors.push(Person::new(&name))
+                feed.authors.push(Person::new(&name));
             }),
 
             (NS::DublinCore, "date") => feed.published = util::handle_timestamp(parser, child),
@@ -63,24 +63,12 @@ fn handle_channel<R: BufRead>(
         }
     }
 
-    if parser.sanitize_content {
-        if let Some(t) = feed.description.as_mut() {
-            t.sanitize()
-        }
-        if let Some(t) = feed.rights.as_mut() {
-            t.sanitize()
-        }
-        if let Some(t) = feed.title.as_mut() {
-            t.sanitize()
-        }
-    }
-
     Ok(())
 }
 
 // Handles <image>
 fn handle_image<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Image>> {
-    let mut image = Image::new("".to_owned());
+    let mut image = Image::new(String::new());
 
     for child in element.children() {
         let child = child?;
@@ -90,7 +78,7 @@ fn handle_image<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Image
             (NS::RSS, "title") => image.title = child.child_as_text(),
 
             (NS::RSS, "link") => if_some_then(child.child_as_text(), |uri| {
-                image.link = Some(Link::new(uri, element.xml_base.as_ref()))
+                image.link = Some(Link::new(uri, element.xml_base.as_ref()));
             }),
 
             // Nothing required for unknown elements
@@ -99,10 +87,10 @@ fn handle_image<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Image
     }
 
     // If we don't have a URI there is no point returning an image
-    Ok(if !image.uri.is_empty() {
-        Some(image)
-    } else {
+    Ok(if image.uri.is_empty() {
         None
+    } else {
+        Some(image)
     })
 }
 
@@ -121,7 +109,7 @@ fn handle_item<R: BufRead>(parser: &Parser, element: Element<R>) -> ParseFeedRes
             (NS::RSS, "title") => entry.title = util::handle_text(child),
 
             (NS::RSS, "link") => {
-                if_some_then(util::handle_link(child), |link| entry.links.push(link))
+                if_some_then(util::handle_link(child), |link| entry.links.push(link));
             }
 
             (NS::RSS, "description") => entry.summary = util::handle_text(child),
@@ -129,14 +117,14 @@ fn handle_item<R: BufRead>(parser: &Parser, element: Element<R>) -> ParseFeedRes
             (NS::Content, "encoded") => content_encoded = util::handle_encoded(child)?,
 
             (NS::DublinCore, "creator") => if_some_then(child.child_as_text(), |name| {
-                entry.authors.push(Person::new(&name))
+                entry.authors.push(Person::new(&name));
             }),
 
             (NS::DublinCore, "date") => entry.published = util::handle_timestamp(parser, child),
 
             (NS::DublinCore, "description") => {
                 if entry.summary.is_none() {
-                    entry.summary = util::handle_text(child)
+                    entry.summary = util::handle_text(child);
                 }
             }
 
@@ -148,37 +136,22 @@ fn handle_item<R: BufRead>(parser: &Parser, element: Element<R>) -> ParseFeedRes
     }
 
     // Use content_encoded if we didn't find an enclosure above
-    if entry.content.is_none() {
-        if let Some(ce) = content_encoded {
-            entry.content = Some(Content {
-                body: Some(ce.content),
-                content_type: ce.content_type,
-                length: None,
-                src: ce.src.map(|s| Link::new(s, element.xml_base.as_ref())),
-            });
-        }
-    }
-
-    if parser.sanitize_content {
-        if let Some(c) = entry.content.as_mut() {
-            c.sanitize()
-        }
-        if let Some(t) = entry.rights.as_mut() {
-            t.sanitize()
-        }
-        if let Some(t) = entry.summary.as_mut() {
-            t.sanitize()
-        }
-        if let Some(t) = entry.title.as_mut() {
-            t.sanitize()
-        }
+    if entry.content.is_none()
+        && let Some(ce) = content_encoded
+    {
+        entry.content = Some(Content {
+            body: Some(ce.content),
+            content_type: ce.content_type,
+            length: None,
+            src: ce.src.map(|s| Link::new(s, element.xml_base.as_ref())),
+        });
     }
 
     // If we found at least 1 link
-    Ok(if !entry.links.is_empty() {
-        Some(entry)
-    } else {
+    Ok(if entry.links.is_empty() {
         // No point returning anything if we are missing a destination
         None
+    } else {
+        Some(entry)
     })
 }

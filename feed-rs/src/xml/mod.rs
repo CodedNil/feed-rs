@@ -14,10 +14,10 @@ use url::Url;
 mod tests;
 
 /// Iteration over the XML elements may return an error (malformed content etc)
-pub(crate) type XmlResult<T> = Result<T, XmlError>;
+pub type XmlResult<T> = Result<T, XmlError>;
 
 /// Produces elements from the provided source
-pub(crate) struct ElementSource<R: BufRead> {
+pub struct ElementSource<R: BufRead> {
     // Needs to be a RefCell since we can't borrow mutably multiple times (e.g. when calls to Element::children() are nested)
     state: RefCell<SourceState<R>>,
 }
@@ -29,7 +29,7 @@ impl<R: BufRead> ElementSource<R> {
     ///
     /// * `xml_data` - the data you wish to parse
     /// * `xml_base_uri` - the base URI if known (e.g. Content-Location, feed URI etc)
-    pub(crate) fn new(xml_data: R, xml_base_uri: Option<&str>) -> XmlResult<ElementSource<R>> {
+    pub(crate) fn new(xml_data: R, xml_base_uri: Option<&str>) -> XmlResult<Self> {
         // Create the XML parser
         let mut reader = NsReader::from_reader(xml_data);
         let config = reader.config_mut();
@@ -38,7 +38,7 @@ impl<R: BufRead> ElementSource<R> {
         config.trim_text(false);
 
         let state = RefCell::new(SourceState::new(reader, xml_base_uri)?);
-        Ok(ElementSource { state })
+        Ok(Self { state })
     }
 
     /// Set default namespace if not set explicitly by the document.
@@ -124,7 +124,7 @@ impl<R: BufRead> ElementSource<R> {
                     state.current_depth += 1;
 
                     // Update the xml-base if required
-                    ElementSource::xml_base_push(&mut state, &attributes)?;
+                    Self::xml_base_push(&mut state, &attributes)?;
 
                     // If we are at the correct depth we found a node of interest
                     if state.current_depth == iter_depth {
@@ -132,7 +132,7 @@ impl<R: BufRead> ElementSource<R> {
                             namespace,
                             name,
                             attributes,
-                            xml_base: ElementSource::xml_base_fetch(&state),
+                            xml_base: Self::xml_base_fetch(&state),
                             source: self,
                             depth: state.current_depth,
                         };
@@ -145,7 +145,7 @@ impl<R: BufRead> ElementSource<R> {
                     state.current_depth -= 1;
 
                     // Update the xml-base if required
-                    ElementSource::xml_base_pop(&mut state);
+                    Self::xml_base_pop(&mut state);
                 }
 
                 // Not interested in other events when looking for elements
@@ -219,11 +219,10 @@ impl<R: BufRead> ElementSource<R> {
                 }
                 Err(url::ParseError::RelativeUrlWithoutBase) => {
                     // Try and form a new URL and push it to the stack
-                    if let Some((_, last)) = state.base_uris.last() {
-                        if let Ok(with_base) = last.join(xml_base) {
+                    if let Some((_, last)) = state.base_uris.last()
+                        && let Ok(with_base) = last.join(xml_base) {
                             state.base_uris.push((state.current_depth, with_base));
                         }
-                    }
                 }
                 Err(e) => return Err(XmlError::Url { e }),
             }
@@ -246,7 +245,7 @@ struct SourceState<R: BufRead> {
 
 impl<R: BufRead> SourceState<R> {
     // Wrap the reader in additional state (buffers, tree depth etc)
-    fn new(reader: NsReader<R>, xml_base_uri: Option<&str>) -> XmlResult<SourceState<R>> {
+    fn new(reader: NsReader<R>, xml_base_uri: Option<&str>) -> XmlResult<Self> {
         // If we have a base URI, parse it and init at the root
         let mut base_uris = Vec::new();
         if let Some(xml_base_uri) = xml_base_uri {
@@ -255,7 +254,7 @@ impl<R: BufRead> SourceState<R> {
         }
 
         let buf_event = Vec::with_capacity(512);
-        let mut state = SourceState {
+        let mut state = Self {
             reader,
             buf_event,
             next: Ok(None),
@@ -332,13 +331,13 @@ impl<R: BufRead> SourceState<R> {
 
     // Peeks the next event (does not advance)
     // Callers should call next() to consume the event to move on
-    fn peek(&mut self) -> &XmlResult<Option<XmlEvent>> {
+    const fn peek(&mut self) -> &XmlResult<Option<XmlEvent>> {
         &self.next
     }
 }
 
 /// An element (specifically, XML element start tag)
-pub(crate) struct Element<'a, R: BufRead> {
+pub struct Element<'a, R: BufRead> {
     /// Qualified name of the element.
     pub name: String,
 
@@ -348,7 +347,7 @@ pub(crate) struct Element<'a, R: BufRead> {
     /// A list of attributes associated with the element.
     pub attributes: Vec<NameValue>,
 
-    /// The base URL for this element per the xml:base specification (https://www.w3.org/TR/xmlbase/)
+    /// The base URL for this element per the xml:base specification (<https://www.w3.org/TR/xmlbase>/)
     pub xml_base: Option<Url>,
 
     // Depth of this element
@@ -360,7 +359,7 @@ pub(crate) struct Element<'a, R: BufRead> {
 
 // TODO this is flagged as needless, but is required in Element... fix this
 #[allow(clippy::needless_lifetimes)]
-impl<'a, R: BufRead> Element<'a, R> {
+impl<R: BufRead> Element<'_, R> {
     /// Returns the value for an attribute if it exists
     pub(crate) fn attr_value(&self, name: &str) -> Option<String> {
         self.attributes
@@ -375,7 +374,7 @@ impl<'a, R: BufRead> Element<'a, R> {
     }
 
     /// Returns an iterator over children of this element (i.e. descends a level in the hierarchy)
-    pub(crate) fn children(&self) -> ElementIter<R> {
+    pub(crate) const fn children(&self) -> ElementIter<R> {
         ElementIter {
             source: self.source,
             depth: self.depth + 1,
@@ -402,16 +401,16 @@ impl<'a, R: BufRead> Element<'a, R> {
 
 // TODO this is flagged as needless, but is required in Element... fix this
 #[allow(clippy::needless_lifetimes)]
-impl<'a, R: BufRead> Debug for Element<'a, R> {
+impl<R: BufRead> Debug for Element<'_, R> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut buffer = String::new();
         append_element_start(&mut buffer, &self.name, &self.attributes);
-        writeln!(f, "{}", buffer)
+        writeln!(f, "{buffer}")
     }
 }
 
 /// Iterator over elements at a specific depth in the hierarchy
-pub(crate) struct ElementIter<'a, R: BufRead> {
+pub struct ElementIter<'a, R: BufRead> {
     source: &'a ElementSource<R>,
     depth: u32,
 }
@@ -425,8 +424,8 @@ impl<'a, R: BufRead> Iterator for ElementIter<'a, R> {
 }
 
 /// Set of automatically recognised namespaces
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub(crate) enum NS {
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum NS {
     Atom,
     RSS,
     // Namespaces we do not support are treated as this special case, to avoid processing content incorrectly
@@ -439,25 +438,25 @@ pub(crate) enum NS {
 }
 
 impl NS {
-    fn parse(s: &str) -> NS {
+    fn parse(s: &str) -> Self {
         match s {
-            "http://purl.org/rss/1.0/" => NS::RSS,
-            "http://www.w3.org/2005/Atom" => NS::Atom,
+            "http://purl.org/rss/1.0/" => Self::RSS,
+            "http://www.w3.org/2005/Atom" => Self::Atom,
 
             // Extension namespaces
-            "http://purl.org/rss/1.0/modules/content/" => NS::Content,
-            "http://purl.org/dc/elements/1.1/" => NS::DublinCore,
-            "http://search.yahoo.com/mrss/" => NS::MediaRSS,
-            "http://www.itunes.com/dtds/podcast-1.0.dtd" => NS::Itunes,
+            "http://purl.org/rss/1.0/modules/content/" => Self::Content,
+            "http://purl.org/dc/elements/1.1/" => Self::DublinCore,
+            "http://search.yahoo.com/mrss/" => Self::MediaRSS,
+            "http://www.itunes.com/dtds/podcast-1.0.dtd" => Self::Itunes,
 
             // Everything else is ignored
-            _ => NS::Unknown,
+            _ => Self::Unknown,
         }
     }
 }
 
 /// Combination of a name and value (e.g. attribute name + value)
-pub(crate) struct NameValue {
+pub struct NameValue {
     pub name: String,
     pub value: String,
 }
@@ -482,10 +481,10 @@ pub enum XmlError {
 impl fmt::Display for XmlError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            XmlError::Parser { e } => write!(f, "Parser error: {}", e),
-            XmlError::Url { e } => write!(f, "Url error: {}", e),
-            XmlError::Encoding { e } => write!(f, "Encoding error: {}", e),
-            XmlError::Escape { e } => write!(f, "Escape error: {}", e),
+            Self::Parser { e } => write!(f, "Parser error: {e}"),
+            Self::Url { e } => write!(f, "Url error: {e}"),
+            Self::Encoding { e } => write!(f, "Encoding error: {e}"),
+            Self::Escape { e } => write!(f, "Escape error: {e}"),
         }
     }
 }
@@ -494,25 +493,25 @@ impl Error for XmlError {}
 
 impl From<quick_xml::Error> for XmlError {
     fn from(e: quick_xml::Error) -> Self {
-        XmlError::Parser { e }
+        Self::Parser { e }
     }
 }
 
 impl From<url::ParseError> for XmlError {
     fn from(e: url::ParseError) -> Self {
-        XmlError::Url { e }
+        Self::Url { e }
     }
 }
 
 impl From<quick_xml::encoding::EncodingError> for XmlError {
     fn from(e: quick_xml::encoding::EncodingError) -> Self {
-        XmlError::Encoding { e }
+        Self::Encoding { e }
     }
 }
 
 impl From<quick_xml::escape::EscapeError> for XmlError {
     fn from(e: quick_xml::escape::EscapeError) -> Self {
-        XmlError::Escape { e }
+        Self::Escape { e }
     }
 }
 
@@ -534,11 +533,11 @@ enum XmlEvent {
 
 impl XmlEvent {
     // Creates a new event corresponding to an XML end-tag
-    fn end<R: BufRead>(event: &BytesEnd, reader: &Reader<R>) -> XmlEvent {
+    fn end<R: BufRead>(event: &BytesEnd, reader: &Reader<R>) -> Self {
         // Parse the name
-        let name = XmlEvent::parse_name(event.name().as_ref(), reader);
+        let name = Self::parse_name(event.name().as_ref(), reader);
 
-        XmlEvent::End { name }
+        Self::End { name }
     }
 
     // Extracts the element name, dropping the namespace prefix if present
@@ -552,9 +551,9 @@ impl XmlEvent {
     }
 
     // Creates a new event corresponding to an XML start-tag
-    fn start<R: BufRead>(namespace: NS, event: &BytesStart, reader: &Reader<R>) -> XmlEvent {
+    fn start<R: BufRead>(namespace: NS, event: &BytesStart, reader: &Reader<R>) -> Self {
         // Parse the name
-        let name = XmlEvent::parse_name(event.name().as_ref(), reader);
+        let name = Self::parse_name(event.name().as_ref(), reader);
 
         // Parse the attributes
         let attributes = event
@@ -585,7 +584,7 @@ impl XmlEvent {
             })
             .collect::<Vec<NameValue>>();
 
-        XmlEvent::Start {
+        Self::Start {
             namespace,
             name,
             attributes,
@@ -593,14 +592,14 @@ impl XmlEvent {
     }
 
     // Creates a new event corresponding to an XML text node
-    fn text<R: BufRead>(text: &BytesText, reader: &Reader<R>) -> XmlResult<Option<XmlEvent>> {
+    fn text<R: BufRead>(text: &BytesText, reader: &Reader<R>) -> XmlResult<Option<Self>> {
         if text.is_empty() {
             Ok(None)
         } else {
             let escaped_text = reader.decoder().decode(text)?;
             let unescaped_text = quick_xml::escape::unescape(&escaped_text)?;
 
-            Ok(Some(XmlEvent::Text(unescaped_text.to_string())))
+            Ok(Some(Self::Text(unescaped_text.to_string())))
         }
     }
 
@@ -609,13 +608,13 @@ impl XmlEvent {
     fn text_from_cdata<R: BufRead>(
         cdata: &BytesCData,
         reader: &Reader<R>,
-    ) -> XmlResult<Option<XmlEvent>> {
+    ) -> XmlResult<Option<Self>> {
         if cdata.is_empty() {
             Ok(None)
         } else {
             let decoded_text = reader.decoder().decode(cdata)?;
 
-            Ok(Some(XmlEvent::Text(decoded_text.to_string())))
+            Ok(Some(Self::Text(decoded_text.to_string())))
         }
     }
 }

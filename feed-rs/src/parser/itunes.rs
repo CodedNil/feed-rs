@@ -10,7 +10,7 @@ use crate::parser::ParseFeedResult;
 use crate::xml::{Element, NS};
 
 // Process <itunes> elements at channel level updating the Feed object as required
-pub(crate) fn handle_itunes_channel_element<R: BufRead>(
+pub fn handle_itunes_channel_element<R: BufRead>(
     element: Element<R>,
     feed: &mut Feed,
 ) -> ParseFeedResult<()> {
@@ -23,7 +23,7 @@ pub(crate) fn handle_itunes_channel_element<R: BufRead>(
         }),
 
         (NS::Itunes, "category") => if_some_then(handle_category(element)?, |category| {
-            feed.categories.push(category)
+            feed.categories.push(category);
         }),
 
         (NS::Itunes, "explicit") => if_some_then(handle_explicit(element), |rating| {
@@ -34,10 +34,10 @@ pub(crate) fn handle_itunes_channel_element<R: BufRead>(
         }),
 
         (NS::Itunes, "author") => if_some_then(element.child_as_text(), |person| {
-            feed.authors.push(Person::new(&person))
+            feed.authors.push(Person::new(&person));
         }),
         (NS::Itunes, "owner") => if_some_then(handle_owner(element)?, |owner| {
-            feed.contributors.push(owner)
+            feed.contributors.push(owner);
         }),
 
         // Nothing required for unknown elements
@@ -48,7 +48,7 @@ pub(crate) fn handle_itunes_channel_element<R: BufRead>(
 }
 
 // Process <itunes> elements at item level and turn them into something that looks like MediaRSS objects.
-pub(crate) fn handle_itunes_item_element<R: BufRead>(
+pub fn handle_itunes_item_element<R: BufRead>(
     element: Element<R>,
     media_obj: &mut MediaObject,
 ) -> ParseFeedResult<()> {
@@ -56,15 +56,15 @@ pub(crate) fn handle_itunes_item_element<R: BufRead>(
         (NS::Itunes, "title") => media_obj.title = atom::handle_text(element)?,
 
         (NS::Itunes, "image") => if_some_then(handle_image(element), |thumbnail| {
-            media_obj.thumbnails.push(thumbnail)
+            media_obj.thumbnails.push(thumbnail);
         }),
 
         (NS::Itunes, "duration") => if_some_then(handle_duration(element), |duration| {
-            media_obj.duration = Some(duration)
+            media_obj.duration = Some(duration);
         }),
 
         (NS::Itunes, "author") => if_some_then(handle_author(element), |credit| {
-            media_obj.credits.push(credit)
+            media_obj.credits.push(credit);
         }),
 
         (NS::Itunes, "summary") => media_obj.description = atom::handle_text(element)?,
@@ -90,11 +90,10 @@ fn handle_category<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Ca
         // Add any sub-categories
         for child in element.children() {
             let child = child?;
-            if child.ns_and_tag() == (NS::Itunes, "category") {
-                if let Some(subcat) = handle_category(child)? {
+            if child.ns_and_tag() == (NS::Itunes, "category")
+                && let Some(subcat) = handle_category(child)? {
                     category.subcategories.push(subcat);
                 }
-            }
         }
 
         Some(category)

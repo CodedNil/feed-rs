@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use mediatype::{names, MediaTypeBuf};
+use mediatype::{MediaTypeBuf, names};
 
 use crate::model::{Category, Content, Entry, Feed, FeedType, Image, Link, Person, Text};
 use crate::parser::util::if_some_then;
@@ -10,7 +10,7 @@ use crate::parser::{ParseFeedError, ParseFeedResult, Parser};
 mod tests;
 
 /// Parses a JSON feed into our model
-pub(crate) fn parse<R: Read>(parser: &Parser, stream: R) -> ParseFeedResult<Feed> {
+pub fn parse<R: Read>(parser: &Parser, stream: R) -> ParseFeedResult<Feed> {
     let parsed = serde_json::from_reader(stream);
     if let Ok(json_feed) = parsed {
         convert(parser, json_feed)
@@ -33,13 +33,13 @@ fn convert(parser: &Parser, jf: JsonFeed) -> ParseFeedResult<Feed> {
     feed.title = Some(Text::new(jf.title));
 
     if_some_then(jf.home_page_url, |uri| {
-        feed.links.push(Link::new(uri, None))
+        feed.links.push(Link::new(uri, None));
     });
 
     if_some_then(jf.feed_url, |uri| feed.links.push(Link::new(uri, None)));
 
     if_some_then(jf.description, |text| {
-        feed.description = Some(Text::new(text))
+        feed.description = Some(Text::new(text));
     });
 
     if_some_then(jf.icon, |uri| feed.logo = Some(Image::new(uri)));
@@ -69,13 +69,13 @@ fn convert(parser: &Parser, jf: JsonFeed) -> ParseFeedResult<Feed> {
 
 fn accumulate_author(authors: &mut Vec<Person>, ja: &JsonAuthor) {
     // Only add if we haven't already seen this person
-    if let Some(name) = &ja.name {
-        if !authors.iter().any(|a| a.name.as_str() == name) {
-            let mut person = Person::new(name);
-            person.uri.clone_from(&ja.url);
+    if let Some(name) = &ja.name
+        && !authors.iter().any(|a| a.name.as_str() == name)
+    {
+        let mut person = Person::new(name);
+        person.uri.clone_from(&ja.url);
 
-            authors.push(person);
-        }
+        authors.push(person);
     }
 }
 
@@ -120,14 +120,14 @@ fn handle_content(content: Option<String>, content_type: MediaTypeBuf) -> Option
 // Converts a JSON feed item into our model
 fn handle_item(parser: &Parser, ji: JsonItem) -> Entry {
     let mut entry = Entry {
-        id: ji.id.unwrap_or("".into()),
+        id: ji.id.unwrap_or_default(),
         ..Default::default()
     };
 
     if_some_then(ji.url, |uri| entry.links.push(Link::new(uri, None)));
 
     if_some_then(ji.external_url, |uri| {
-        entry.links.push(Link::new(uri, None))
+        entry.links.push(Link::new(uri, None));
     });
 
     if_some_then(ji.title, |text| entry.title = Some(Text::new(text)));
@@ -150,11 +150,11 @@ fn handle_item(parser: &Parser, ji: JsonItem) -> Entry {
     }
 
     if_some_then(ji.date_published, |published| {
-        entry.published = parser.parse_timestamp(&published)
+        entry.published = parser.parse_timestamp(&published);
     });
 
     if_some_then(ji.date_modified, |modified| {
-        entry.updated = parser.parse_timestamp(&modified)
+        entry.updated = parser.parse_timestamp(&modified);
     });
 
     handle_authors(&mut entry.authors, &ji.author, &ji.authors);
@@ -162,24 +162,15 @@ fn handle_item(parser: &Parser, ji: JsonItem) -> Entry {
     if_some_then(ji.tags, |tags| {
         tags.into_iter()
             .map(|t| Category::new(&t))
-            .for_each(|category| entry.categories.push(category))
+            .for_each(|category| entry.categories.push(category));
     });
 
     if_some_then(ji.attachments, |attachments| {
         attachments
             .into_iter()
             .map(handle_attachment)
-            .for_each(|link| entry.links.push(link))
+            .for_each(|link| entry.links.push(link));
     });
-
-    // Per the JSON Feed spec, "the only place HTML is allowed in this format is in content_html";
-    // as such when sanitizing, we will *only* inspect entry.content.
-    // it's "text/html".
-    if parser.sanitize_content {
-        if let Some(c) = entry.content.as_mut() {
-            c.sanitize()
-        }
-    }
 
     entry
 }

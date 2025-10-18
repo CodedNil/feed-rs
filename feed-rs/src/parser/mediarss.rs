@@ -15,7 +15,7 @@ use crate::xml::{Element, NS};
 // TODO Duplicated elements appearing at deeper levels of the document tree have higher priority over other levels. For example, <media:content> level elements are favored over <item> level elements. The priority level is listed from strongest to weakest: <media:content>, <media:group>, <item>, <channel>.
 
 /// Handles the top-level "media:group", a collection of mediarss elements.
-pub(crate) fn handle_media_group<R: BufRead>(
+pub fn handle_media_group<R: BufRead>(
     element: Element<R>,
 ) -> ParseFeedResult<Option<MediaObject>> {
     let mut media_obj = MediaObject::default();
@@ -31,9 +31,9 @@ pub(crate) fn handle_media_group<R: BufRead>(
 }
 
 /// Process the mediarss element into the supplied media object
-/// This isn't the typical pattern, but MediaRSS has a strange shape (content within group, with other elements as peers...or no group and some elements as children)
+/// This isn't the typical pattern, but `MediaRSS` has a strange shape (content within group, with other elements as peers...or no group and some elements as children)
 /// So this signature is used to parse into a media object from a group, or a default one created at the entry level
-pub(crate) fn handle_media_element<R: BufRead>(
+pub fn handle_media_element<R: BufRead>(
     element: Element<R>,
     media_obj: &mut MediaObject,
 ) -> ParseFeedResult<()> {
@@ -46,7 +46,7 @@ pub(crate) fn handle_media_element<R: BufRead>(
         (NS::MediaRSS, "content") => handle_media_content(element, media_obj)?,
 
         (NS::MediaRSS, "thumbnail") => if_some_then(handle_media_thumbnail(element), |thumbnail| {
-            media_obj.thumbnails.push(thumbnail)
+            media_obj.thumbnails.push(thumbnail);
         }),
 
         (NS::MediaRSS, "description") => media_obj.description = handle_text(element)?,
@@ -54,11 +54,11 @@ pub(crate) fn handle_media_element<R: BufRead>(
         (NS::MediaRSS, "community") => media_obj.community = handle_media_community(element)?,
 
         (NS::MediaRSS, "credit") => if_some_then(handle_media_credit(element), |credit| {
-            media_obj.credits.push(credit)
+            media_obj.credits.push(credit);
         }),
 
         (NS::MediaRSS, "text") => if_some_then(handle_media_text(element), |text| {
-            media_obj.texts.push(text)
+            media_obj.texts.push(text);
         }),
 
         (NS::MediaRSS, "rating") => rating = handle_media_rating(element),
@@ -73,7 +73,7 @@ pub(crate) fn handle_media_element<R: BufRead>(
             if content.rating.is_none() {
                 content.rating = Some(rating.clone());
             }
-        })
+        });
     }
 
     Ok(())
@@ -92,16 +92,16 @@ fn handle_media_community<R: BufRead>(
                 for attr in &child.attributes {
                     match attr.name.as_str() {
                         "average" => {
-                            if_ok_then_some(attr.value.parse::<f64>(), |v| community.stars_avg = v)
+                            if_ok_then_some(attr.value.parse::<f64>(), |v| community.stars_avg = v);
                         }
                         "count" => if_ok_then_some(attr.value.parse::<u64>(), |v| {
-                            community.stars_count = v
+                            community.stars_count = v;
                         }),
                         "min" => {
-                            if_ok_then_some(attr.value.parse::<u64>(), |v| community.stars_min = v)
+                            if_ok_then_some(attr.value.parse::<u64>(), |v| community.stars_min = v);
                         }
                         "max" => {
-                            if_ok_then_some(attr.value.parse::<u64>(), |v| community.stars_max = v)
+                            if_ok_then_some(attr.value.parse::<u64>(), |v| community.stars_max = v);
                         }
 
                         // Nothing required for unknown attributes
@@ -113,10 +113,10 @@ fn handle_media_community<R: BufRead>(
                 for attr in &child.attributes {
                     match attr.name.as_str() {
                         "views" => if_ok_then_some(attr.value.parse::<u64>(), |v| {
-                            community.stats_views = v
+                            community.stats_views = v;
                         }),
                         "favorites" => if_ok_then_some(attr.value.parse::<u64>(), |v| {
-                            community.stats_favorites = v
+                            community.stats_favorites = v;
                         }),
 
                         // Nothing required for unknown attributes
@@ -146,7 +146,7 @@ fn handle_media_content<R: BufRead>(
             "url" => content.url = util::parse_uri(&attr.value, element.xml_base.as_ref()),
 
             "type" => if_ok_then_some(attr.value.parse::<MediaTypeBuf>(), |v| {
-                content.content_type = v
+                content.content_type = v;
             }),
 
             "width" => if_ok_then_some(attr.value.parse::<u32>(), |v| content.width = v),
@@ -155,7 +155,7 @@ fn handle_media_content<R: BufRead>(
             "fileSize" => if_ok_then_some(attr.value.parse::<u64>(), |v| content.size = v),
 
             "duration" => if_ok_then_some(attr.value.parse::<u64>(), |v| {
-                content.duration = v.map(Duration::from_secs)
+                content.duration = v.map(Duration::from_secs);
             }),
 
             // Nothing required for unknown attributes
@@ -184,21 +184,21 @@ fn handle_media_content<R: BufRead>(
             // These elements are modelled as fields on the parent MediaObject, but only set if the parent field does not already have a value
             (NS::MediaRSS, "title") => {
                 if media_obj.title.is_none() {
-                    media_obj.title = handle_text(child)?
+                    media_obj.title = handle_text(child)?;
                 }
             }
             (NS::MediaRSS, "description") => {
                 if media_obj.description.is_none() {
-                    media_obj.description = handle_text(child)?
+                    media_obj.description = handle_text(child)?;
                 }
             }
 
             // These elements are accumulated in the corresponding field of the parent MediaObject
             (NS::MediaRSS, "text") => {
-                if_some_then(handle_media_text(child), |text| media_obj.texts.push(text))
+                if_some_then(handle_media_text(child), |text| media_obj.texts.push(text));
             }
             (NS::MediaRSS, "credit") => if_some_then(handle_media_credit(child), |credit| {
-                media_obj.credits.push(credit)
+                media_obj.credits.push(credit);
             }),
 
             // Other elements in the namespace are handled recursively

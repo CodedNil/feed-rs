@@ -107,10 +107,10 @@ pub struct Feed {
 }
 
 impl Feed {
-    pub(crate) fn new(feed_type: FeedType) -> Self {
-        Feed {
+    pub(crate) const fn new(feed_type: FeedType) -> Self {
+        Self {
             feed_type,
-            id: "".into(),
+            id: String::new(),
             title: None,
             updated: None,
             authors: Vec::new(),
@@ -231,6 +231,7 @@ pub enum FeedType {
 
 /// An item within a feed
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Default)]
 pub struct Entry {
     /// A unique identifier for this item with a feed. If not supplied it is initialised to a hash of the first link or a UUID if not available.
     /// * Atom (required): Identifies the entry using a universally unique and permanent URI.
@@ -291,8 +292,8 @@ pub struct Entry {
     /// Atom (optional): Conveys information about rights, e.g. copyrights, held in and over the feed.
     pub rights: Option<Text>,
 
-    /// Extension for MediaRSS - <https://www.rssboard.org/media-rss>
-    /// A MediaObject will be created in two cases:
+    /// Extension for `MediaRSS` - <https://www.rssboard.org/media-rss>
+    /// A `MediaObject` will be created in two cases:
     /// 1) each "media:group" element encountered in the feed
     /// 2) a default for any other "media:*" elements found at the item level
     ///
@@ -306,27 +307,6 @@ pub struct Entry {
     pub base: Option<String>,
 }
 
-impl Default for Entry {
-    fn default() -> Self {
-        Entry {
-            id: "".into(),
-            title: None,
-            updated: None,
-            authors: Vec::new(),
-            content: None,
-            links: Vec::new(),
-            summary: None,
-            categories: Vec::new(),
-            contributors: Vec::new(),
-            published: None,
-            source: None,
-            rights: None,
-            media: Vec::new(),
-            language: None,
-            base: None,
-        }
-    }
-}
 
 #[cfg(test)]
 impl Entry {
@@ -426,8 +406,8 @@ pub struct Category {
 }
 
 impl Category {
-    pub fn new(term: &str) -> Category {
-        Category {
+    #[must_use] pub fn new(term: &str) -> Self {
+        Self {
             term: term.trim().into(),
             scheme: None,
             label: None,
@@ -473,8 +453,8 @@ pub struct Content {
 }
 
 impl Default for Content {
-    fn default() -> Content {
-        Content {
+    fn default() -> Self {
+        Self {
             body: None,
             content_type: MediaTypeBuf::new(names::TEXT, names::PLAIN),
             length: None,
@@ -484,7 +464,7 @@ impl Default for Content {
 }
 
 impl Content {
-    pub fn sanitize(&mut self) {
+    pub const fn sanitize(&mut self) {
         // We're dealing with a broader variety of possible content types than
         // in Text, since the possibility exists that we'll be dealing with a base64-encode
         // image or the like, so we'll target a correspondingly tighter set: text/html
@@ -539,8 +519,8 @@ pub struct Generator {
 }
 
 impl Generator {
-    pub(crate) fn new(content: &str) -> Generator {
-        Generator {
+    pub(crate) fn new(content: &str) -> Self {
+        Self {
             uri: None,
             version: None,
             content: content.trim().into(),
@@ -586,8 +566,8 @@ pub struct Image {
 }
 
 impl Image {
-    pub(crate) fn new(uri: String) -> Image {
-        Image {
+    pub(crate) const fn new(uri: String) -> Self {
+        Self {
             uri,
             title: None,
             link: None,
@@ -649,7 +629,7 @@ pub struct Link {
 }
 
 impl Link {
-    pub(crate) fn new<S: AsRef<str>>(href: S, base: Option<&Url>) -> Link {
+    pub(crate) fn new<S: AsRef<str>>(href: S, base: Option<&Url>) -> Self {
         let href = match util::parse_uri(href.as_ref(), base) {
             Some(uri) => uri.to_string(),
             None => href.as_ref().to_string(),
@@ -657,7 +637,7 @@ impl Link {
         .trim()
         .to_string();
 
-        Link {
+        Self {
             href,
             rel: None,
             media_type: None,
@@ -720,7 +700,7 @@ pub struct MediaObject {
 
 impl MediaObject {
     // Checks if this object has been populated with content
-    pub(crate) fn has_content(&self) -> bool {
+    pub(crate) const fn has_content(&self) -> bool {
         self.title.is_some()
             || self.description.is_some()
             || !self.content.is_empty()
@@ -787,8 +767,8 @@ pub struct MediaCommunity {
 }
 
 impl MediaCommunity {
-    pub(crate) fn new() -> MediaCommunity {
-        MediaCommunity {
+    pub(crate) const fn new() -> Self {
+        Self {
             stars_avg: None,
             stars_count: None,
             stars_min: None,
@@ -868,8 +848,8 @@ impl MediaContent {
 }
 
 impl MediaContent {
-    pub(crate) fn new() -> MediaContent {
-        MediaContent {
+    pub(crate) const fn new() -> Self {
+        Self {
             url: None,
             content_type: None,
             height: None,
@@ -889,8 +869,8 @@ pub struct MediaCredit {
 }
 
 impl MediaCredit {
-    pub(crate) fn new(entity: String) -> MediaCredit {
-        MediaCredit { entity }
+    pub(crate) const fn new(entity: String) -> Self {
+        Self { entity }
     }
 }
 
@@ -904,14 +884,14 @@ pub struct MediaRating {
 }
 
 impl MediaRating {
-    pub(crate) fn new(value: String) -> MediaRating {
-        MediaRating {
+    pub(crate) fn new(value: String) -> Self {
+        Self {
             urn: "simple".into(),
             value,
         }
     }
 
-    pub fn urn(mut self, urn: &str) -> Self {
+    #[must_use] pub fn urn(mut self, urn: &str) -> Self {
         self.urn = urn.to_string();
         self
     }
@@ -929,8 +909,8 @@ pub struct MediaText {
 }
 
 impl MediaText {
-    pub(crate) fn new(text: Text) -> MediaText {
-        MediaText {
+    pub(crate) const fn new(text: Text) -> Self {
+        Self {
             text,
             start_time: None,
             end_time: None,
@@ -948,8 +928,8 @@ pub struct MediaThumbnail {
 }
 
 impl MediaThumbnail {
-    pub(crate) fn new(image: Image) -> MediaThumbnail {
-        MediaThumbnail { image, time: None }
+    pub(crate) const fn new(image: Image) -> Self {
+        Self { image, time: None }
     }
 }
 
@@ -969,15 +949,15 @@ pub struct Person {
 }
 
 impl Person {
-    pub(crate) fn new(name: &str) -> Person {
-        Person {
+    pub(crate) fn new(name: &str) -> Self {
+        Self {
             name: name.trim().into(),
             uri: None,
             email: None,
         }
     }
 
-    pub fn email(mut self, email: &str) -> Self {
+    #[must_use] pub fn email(mut self, email: &str) -> Self {
         self.email = Some(email.to_owned());
         self
     }
@@ -1000,23 +980,23 @@ pub struct Text {
 }
 
 impl Text {
-    pub(crate) fn new(content: String) -> Text {
-        Text {
+    pub(crate) fn new(content: String) -> Self {
+        Self {
             content_type: MediaTypeBuf::new(names::TEXT, names::PLAIN),
             src: None,
             content: content.trim().to_string(),
         }
     }
 
-    pub(crate) fn html(content: String) -> Text {
-        Text {
+    pub(crate) fn html(content: String) -> Self {
+        Self {
             content_type: MediaTypeBuf::new(names::TEXT, names::HTML),
             src: None,
             content: content.trim().to_string(),
         }
     }
 
-    pub fn sanitize(&mut self) {
+    pub const fn sanitize(&mut self) {
         #[cfg(feature = "sanitize")]
         {
             if self.content_type.as_str() != "text/plain" {

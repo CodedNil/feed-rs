@@ -87,35 +87,35 @@ mod fixes {
 static RFC1123_FORMAT_STR: &str = "%d %b %Y %H:%M:%S %z";
 
 /// Pluggable timestamp parser
-pub(crate) type TimestampParser = dyn Fn(&str) -> Option<DateTime<Utc>> + 'static;
+pub type TimestampParser = dyn Fn(&str) -> Option<DateTime<Utc>> + 'static;
 
 /// Pluggable ID (feed or entry) generator
-pub(crate) type IdGenerator = dyn Fn(&[Link], &Option<Text>, Option<&str>) -> String;
+pub type IdGenerator = dyn Fn(&[Link], &Option<Text>, Option<&str>) -> String;
 
 /// Handles <content:encoded>
-pub(crate) fn handle_encoded<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Text>> {
+pub fn handle_encoded<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Text>> {
     Ok(element.children_as_string()?.map(Text::html))
 }
 
 // Handles "xml:lang" as an attribute (e.g. in Atom feeds)
-pub(crate) fn handle_language_attr<R: BufRead>(element: &Element<R>) -> Option<String> {
+pub fn handle_language_attr<R: BufRead>(element: &Element<R>) -> Option<String> {
     element.attr_value("xml:lang")
 }
 
 // Handles "xml:base" as an attribute (e.g. in Atom feeds)
-pub(crate) fn handle_base_attr<R: BufRead>(element: &Element<R>) -> Option<String> {
+pub fn handle_base_attr<R: BufRead>(element: &Element<R>) -> Option<String> {
     element.attr_value("xml:base")
 }
 
 // Handles <link>
-pub(crate) fn handle_link<R: BufRead>(element: Element<R>) -> Option<Link> {
+pub fn handle_link<R: BufRead>(element: Element<R>) -> Option<Link> {
     element
         .child_as_text()
         .map(|s| Link::new(s, element.xml_base.as_ref()))
 }
 
 // Handles <title>, <description> etc
-pub(crate) fn handle_text<R: BufRead>(element: Element<R>) -> Option<Text> {
+pub fn handle_text<R: BufRead>(element: Element<R>) -> Option<Text> {
     if let Ok(Some(text)) = element.children_as_string() {
         Some(Text::new(text))
     } else {
@@ -124,7 +124,7 @@ pub(crate) fn handle_text<R: BufRead>(element: Element<R>) -> Option<Text> {
 }
 
 /// Handles date/time
-pub(crate) fn handle_timestamp<R: BufRead>(
+pub fn handle_timestamp<R: BufRead>(
     parser: &Parser,
     element: Element<R>,
 ) -> Option<DateTime<Utc>> {
@@ -136,22 +136,22 @@ pub(crate) fn handle_timestamp<R: BufRead>(
 }
 
 /// Simplifies the "if let ... = parse ... assign" block
-pub(crate) fn if_some_then<T, F: FnOnce(T)>(v: Option<T>, func: F) {
+pub fn if_some_then<T, F: FnOnce(T)>(v: Option<T>, func: F) {
     if let Some(v) = v {
-        func(v)
+        func(v);
     }
 }
 
 /// Simplifies the "if let ... = parse ... assign" block
-pub(crate) fn if_ok_then_some<T, F: FnOnce(Option<T>)>(v: Result<T, impl Error>, func: F) {
+pub fn if_ok_then_some<T, F: FnOnce(Option<T>)>(v: Result<T, impl Error>, func: F) {
     if let Ok(v) = v {
-        func(Some(v))
+        func(Some(v));
     }
 }
 
 /// Parses a timestamp using a variety of strategies to try and deal with the remarkable variability and non-standards
 /// compliant text on the internet.
-pub(crate) fn parse_timestamp_lenient(original: &str) -> Option<DateTime<Utc>> {
+pub fn parse_timestamp_lenient(original: &str) -> Option<DateTime<Utc>> {
     // Curiously, we see RFC-3339 dates in RSS 2 feeds, and it is supposed to be the format for Atom and Json too so we try this first
     try_parse_timestamp_rfc3339_lenient(original)
         // Next is the format for RSS 2, which is used often
@@ -161,18 +161,17 @@ pub(crate) fn parse_timestamp_lenient(original: &str) -> Option<DateTime<Utc>> {
 }
 
 // Parses a URI, potentially resolving relative URIs against the base if provided
-pub(crate) fn parse_uri(uri: &str, base: Option<&Url>) -> Option<Url> {
+pub fn parse_uri(uri: &str, base: Option<&Url>) -> Option<Url> {
     match Url::parse(uri) {
         // Absolute URIs will parse correctly
         Ok(uri) => Some(uri),
 
         // If its a relative URL we need to add the base
         Err(url::ParseError::RelativeUrlWithoutBase) => {
-            if let Some(base) = base {
-                if let Ok(with_base) = base.join(uri) {
+            if let Some(base) = base
+                && let Ok(with_base) = base.join(uri) {
                     return Some(with_base);
                 }
-            }
 
             None
         }
@@ -222,13 +221,13 @@ fn try_parse_timestamp_rfc3339_lenient(original: &str) -> Option<DateTime<Utc>> 
 }
 
 /// Generates a new UUID.
-pub(crate) fn uuid_gen() -> String {
+pub fn uuid_gen() -> String {
     Uuid::new_v4().to_string()
 }
 
 /// Parses "normal play time" per the RSS media spec
 /// NPT has a second or sub-second resolution. It is specified as H:M:S.h (npt-hhmmss) or S.h (npt-sec), where H=hours, M=minutes, S=second and h=fractions of a second.
-pub(crate) fn parse_npt(text: &str) -> Option<Duration> {
+pub fn parse_npt(text: &str) -> Option<Duration> {
     // Try npt-hhmmss format first
     static NPT_HHMMSS: OnceLock<Regex> = OnceLock::new();
     let npt_hhmmss = NPT_HHMMSS.get_or_init(|| {
@@ -260,8 +259,8 @@ pub(crate) fn parse_npt(text: &str) -> Option<Duration> {
         // Extract seconds (s) and fractional seconds (f)
         Regex::new(r"(?P<s>\d+)(\.(?P<f>\d+))?").unwrap()
     });
-    if let Some(captures) = npt_sec.captures(text) {
-        if let Some(s) = captures.name("s") {
+    if let Some(captures) = npt_sec.captures(text)
+        && let Some(s) = captures.name("s") {
             // Parse the seconds
             let seconds = s.as_str().parse::<u64>().unwrap();
             let mut duration = Duration::from_secs(seconds);
@@ -271,7 +270,6 @@ pub(crate) fn parse_npt(text: &str) -> Option<Duration> {
 
             return Some(duration);
         }
-    }
 
     // Just drop it
     None

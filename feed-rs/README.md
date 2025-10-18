@@ -17,16 +17,6 @@ Add the dependency to your `Cargo.toml`.
 feed-rs = "2.3.1"
 ```
 
-To automatically sanitize parsed HTML content, use the `sanitize` feature. Note
-that fields with a media type of `text/plain` will not be sanitized, to avoid
-potential data loss and should be sanitized by the consumer of the feed if
-rendered as HTML.
-
-```toml
-[dependencies]
-feed-rs = { version = "2.2.1", features = ["sanitize"] }
-```
-
 ## Reading
 
 A feed can be parsed from any object that implements the `Read` trait.
@@ -81,7 +71,7 @@ MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
 
 ## Contribution
 
-Any contribution intentionally submitted for inclusion in the work by you, 
+Any contribution intentionally submitted for inclusion in the work by you,
 shall be licensed as above, without any additional terms or conditions.
 
 ## Original author

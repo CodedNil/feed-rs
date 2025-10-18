@@ -1,6 +1,6 @@
 use std::io::BufRead;
 
-use mediatype::{names, MediaTypeBuf};
+use mediatype::{MediaTypeBuf, names};
 
 use crate::model::{
     Category, Content, Entry, Feed, FeedType, Generator, Image, Link, MediaObject, Person, Text,
@@ -8,15 +8,15 @@ use crate::model::{
 use crate::parser::mediarss::handle_media_element;
 use crate::parser::util;
 use crate::parser::util::if_some_then;
-use crate::parser::{mediarss, Parser};
 use crate::parser::{ParseErrorKind, ParseFeedError, ParseFeedResult};
+use crate::parser::{Parser, mediarss};
 use crate::xml::{Element, NS};
 
 #[cfg(test)]
 mod tests;
 
 /// Parses an Atom feed into our model
-pub(crate) fn parse_feed<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedResult<Feed> {
+pub fn parse_feed<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedResult<Feed> {
     let mut feed = Feed::new(FeedType::Atom);
 
     feed.language = util::handle_language_attr(&root);
@@ -29,21 +29,21 @@ pub(crate) fn parse_feed<R: BufRead>(parser: &Parser, root: Element<R>) -> Parse
             (NS::Atom, "title") => feed.title = handle_text(child)?,
 
             (NS::Atom, "updated") => if_some_then(child.child_as_text(), |text| {
-                feed.updated = parser.parse_timestamp(&text)
+                feed.updated = parser.parse_timestamp(&text);
             }),
 
             (NS::Atom, "author") => {
-                if_some_then(handle_person(child)?, |person| feed.authors.push(person))
+                if_some_then(handle_person(child)?, |person| feed.authors.push(person));
             }
 
             (NS::Atom, "link") => if_some_then(handle_link(child), |link| feed.links.push(link)),
 
             (NS::Atom, "category") => if_some_then(handle_category(child), |category| {
-                feed.categories.push(category)
+                feed.categories.push(category);
             }),
 
             (NS::Atom, "contributor") => if_some_then(handle_person(child)?, |person| {
-                feed.contributors.push(person)
+                feed.contributors.push(person);
             }),
 
             (NS::Atom, "generator") => feed.generator = handle_generator(child),
@@ -57,23 +57,11 @@ pub(crate) fn parse_feed<R: BufRead>(parser: &Parser, root: Element<R>) -> Parse
             (NS::Atom, "subtitle") => feed.description = handle_text(child)?,
 
             (NS::Atom, "entry") => if_some_then(handle_entry(parser, child)?, |entry| {
-                feed.entries.push(entry)
+                feed.entries.push(entry);
             }),
 
             // Nothing required for unknown elements
             _ => {}
-        }
-    }
-
-    if parser.sanitize_content {
-        if let Some(t) = feed.description.as_mut() {
-            t.sanitize()
-        }
-        if let Some(t) = feed.rights.as_mut() {
-            t.sanitize()
-        }
-        if let Some(t) = feed.title.as_mut() {
-            t.sanitize()
         }
     }
 
@@ -83,11 +71,11 @@ pub(crate) fn parse_feed<R: BufRead>(parser: &Parser, root: Element<R>) -> Parse
 /// Parses an Atom entry into our model
 ///
 /// Note that the entry is wrapped in an empty Feed to keep the API consistent
-pub(crate) fn parse_entry<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedResult<Feed> {
+pub fn parse_entry<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedResult<Feed> {
     let mut feed = Feed::new(FeedType::Atom);
 
     if_some_then(handle_entry(parser, root)?, |entry| {
-        feed.entries.push(entry)
+        feed.entries.push(entry);
     });
 
     Ok(feed)
@@ -162,7 +150,7 @@ fn handle_content<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Con
     // from http://www.atomenabled.org/developers/syndication/#contentElement
     match content_type.as_deref() {
         // Should be handled as a text element per "In the most common case, the type attribute is either text, html, xhtml, in which case the content element is defined identically to other text constructs"
-        Some("text") | Some("html") | Some("xhtml") | Some("text/html") | None => {
+        Some("text" | "html" | "xhtml" | "text/html") | None => {
             handle_text(element)?
                 .map(|text| {
                     let mut content = Content::default();
@@ -237,11 +225,11 @@ fn handle_entry<R: BufRead>(
             (NS::Atom, "title") => entry.title = handle_text(child)?,
 
             (NS::Atom, "updated") => if_some_then(child.child_as_text(), |text| {
-                entry.updated = parser.parse_timestamp(&text)
+                entry.updated = parser.parse_timestamp(&text);
             }),
 
             (NS::Atom, "author") => {
-                if_some_then(handle_person(child)?, |person| entry.authors.push(person))
+                if_some_then(handle_person(child)?, |person| entry.authors.push(person));
             }
 
             (NS::Atom, "content") => {
@@ -255,25 +243,25 @@ fn handle_entry<R: BufRead>(
             (NS::Atom, "summary") => entry.summary = handle_text(child)?,
 
             (NS::Atom, "category") => if_some_then(handle_category(child), |category| {
-                entry.categories.push(category)
+                entry.categories.push(category);
             }),
 
             (NS::Atom, "contributor") => if_some_then(handle_person(child)?, |person| {
-                entry.contributors.push(person)
+                entry.contributors.push(person);
             }),
 
             // Some feeds have "pubDate" instead of "published"
-            (NS::Atom, "published") | (NS::Atom, "pubDate") => {
+            (NS::Atom, "published" | "pubDate") => {
                 if_some_then(child.child_as_text(), |text| {
-                    entry.published = parser.parse_timestamp(&text)
-                })
+                    entry.published = parser.parse_timestamp(&text);
+                });
             }
 
             (NS::Atom, "rights") => entry.rights = handle_text(child)?,
 
             // MediaRSS group creates a new object for this group of elements
             (NS::MediaRSS, "group") => if_some_then(mediarss::handle_media_group(child)?, |obj| {
-                entry.media.push(obj)
+                entry.media.push(obj);
             }),
 
             // MediaRSS tags that are not grouped are parsed into the default object
@@ -281,21 +269,6 @@ fn handle_entry<R: BufRead>(
 
             // Nothing required for unknown elements
             _ => {}
-        }
-    }
-
-    if parser.sanitize_content {
-        if let Some(c) = entry.content.as_mut() {
-            c.sanitize()
-        }
-        if let Some(t) = entry.rights.as_mut() {
-            t.sanitize()
-        }
-        if let Some(t) = entry.summary.as_mut() {
-            t.sanitize()
-        }
-        if let Some(t) = entry.title.as_mut() {
-            t.sanitize()
         }
     }
 
@@ -338,7 +311,7 @@ fn handle_image<R: BufRead>(element: Element<R>) -> Option<Image> {
 }
 
 // Handles an Atom <link>
-pub(crate) fn handle_link<R: BufRead>(element: Element<R>) -> Option<Link> {
+pub fn handle_link<R: BufRead>(element: Element<R>) -> Option<Link> {
     // Always need an href
     element.attr_value("href").map(|href| {
         let mut link = Link::new(href, element.xml_base.as_ref());
@@ -388,7 +361,7 @@ fn handle_person<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Pers
 }
 
 // Directly handles an Atom <title>, <summary>, <rights> or <subtitle> element
-pub(crate) fn handle_text<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Text>> {
+pub fn handle_text<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Text>> {
     // Find type, defaulting to "text" if not present
     let type_attr = element
         .attributes

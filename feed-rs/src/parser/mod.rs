@@ -41,32 +41,32 @@ pub enum ParseFeedError {
 
 impl From<serde_json::error::Error> for ParseFeedError {
     fn from(err: serde_json::error::Error) -> Self {
-        ParseFeedError::JsonSerde(err)
+        Self::JsonSerde(err)
     }
 }
 
 impl From<std::io::Error> for ParseFeedError {
     fn from(err: std::io::Error) -> Self {
-        ParseFeedError::IoError(err)
+        Self::IoError(err)
     }
 }
 
 impl From<xml::XmlError> for ParseFeedError {
     fn from(err: xml::XmlError) -> Self {
-        ParseFeedError::XmlReader(err)
+        Self::XmlReader(err)
     }
 }
 
 impl fmt::Display for ParseFeedError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ParseFeedError::ParseError(pe) => write!(f, "unable to parse feed: {}", pe),
-            ParseFeedError::IoError(ie) => write!(f, "unable to read feed: {}", ie),
-            ParseFeedError::JsonSerde(je) => write!(f, "unable to parse JSON: {}", je),
-            ParseFeedError::JsonUnsupportedVersion(version) => {
-                write!(f, "unsupported version: {}", version)
+            Self::ParseError(pe) => write!(f, "unable to parse feed: {pe}"),
+            Self::IoError(ie) => write!(f, "unable to read feed: {ie}"),
+            Self::JsonSerde(je) => write!(f, "unable to parse JSON: {je}"),
+            Self::JsonUnsupportedVersion(version) => {
+                write!(f, "unsupported version: {version}")
             }
-            ParseFeedError::XmlReader(xe) => write!(f, "unable to parse XML: {}", xe),
+            Self::XmlReader(xe) => write!(f, "unable to parse XML: {xe}"),
         }
     }
 }
@@ -74,9 +74,9 @@ impl fmt::Display for ParseFeedError {
 impl Error for ParseFeedError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            ParseFeedError::IoError(ie) => Some(ie),
-            ParseFeedError::JsonSerde(je) => Some(je),
-            ParseFeedError::XmlReader(xe) => Some(xe),
+            Self::IoError(ie) => Some(ie),
+            Self::JsonSerde(je) => Some(je),
+            Self::XmlReader(xe) => Some(xe),
             _ => None,
         }
     }
@@ -96,9 +96,9 @@ pub enum ParseErrorKind {
 impl fmt::Display for ParseErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ParseErrorKind::NoFeedRoot => f.write_str("no root element"),
-            ParseErrorKind::UnknownMimeType(mime) => write!(f, "unsupported content type {}", mime),
-            ParseErrorKind::MissingContent(elem) => write!(f, "missing content element {}", elem),
+            Self::NoFeedRoot => f.write_str("no root element"),
+            Self::UnknownMimeType(mime) => write!(f, "unsupported content type {mime}"),
+            Self::MissingContent(elem) => write!(f, "missing content element {elem}"),
         }
     }
 }
@@ -107,7 +107,6 @@ impl fmt::Display for ParseErrorKind {
 pub struct Parser {
     base_uri: Option<String>,
     id_generator: Box<IdGenerator>,
-    sanitize_content: bool,
     timestamp_parser: Box<TimestampParser>,
 }
 
@@ -201,7 +200,7 @@ impl Parser {
                     element_source.set_default_default_namespace(NS::RSS);
                     return rss2::parse(self, root);
                 }
-                ("rss", Some("0.91")) | ("rss", Some("0.92")) => {
+                ("rss", Some("0.91" | "0.92")) => {
                     element_source.set_default_default_namespace(NS::RSS);
                     return rss0::parse(self, root);
                 }
@@ -210,7 +209,7 @@ impl Parser {
                     return rss1::parse(self, root);
                 }
                 _ => {}
-            };
+            }
         }
 
         // Couldn't find a recognised feed within the provided XML stream
@@ -235,8 +234,9 @@ pub struct Builder {
 
 impl Builder {
     /// Create a new instance of the builder
-    pub fn new() -> Builder {
-        Builder::default()
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Source of the content, used to resolve relative URLs in XML based feeds
@@ -246,11 +246,11 @@ impl Builder {
     }
 
     /// Create a new instance of the parser
+    #[must_use]
     pub fn build(self) -> Parser {
         Parser {
             base_uri: self.base_uri,
             id_generator: self.id_generator,
-            sanitize_content: self.sanitize_content,
             timestamp_parser: self.timestamp_parser,
         }
     }
@@ -265,6 +265,7 @@ impl Builder {
     }
 
     /// Registers an ID generator compatible with v0.2 of feed-rs
+    #[must_use]
     pub fn id_generator_v0_2(self) -> Self {
         self.id_generator(|links, title, _uri| {
             // If we have a link without relative components, use that
@@ -284,7 +285,8 @@ impl Builder {
 
     /// Registers the flag for sanitizing content when the "sanitize" feature
     /// is available
-    pub fn sanitize_content(mut self, flag: bool) -> Self {
+    #[must_use]
+    pub const fn sanitize_content(mut self, flag: bool) -> Self {
         self.sanitize_content = flag;
         self
     }
@@ -302,7 +304,7 @@ impl Builder {
 /// Creates a parser instance with sensible defaults
 impl Default for Builder {
     fn default() -> Self {
-        Builder {
+        Self {
             base_uri: None,
             id_generator: Box::new(generate_id),
             sanitize_content: true,
@@ -317,7 +319,7 @@ fn assign_missing_ids(id_generator: &IdGenerator, feed: &mut model::Feed, uri: O
         feed.id = id_generator(&feed.links, &feed.title, uri);
     }
 
-    for entry in feed.entries.iter_mut() {
+    for entry in &mut feed.entries {
         if entry.id.is_empty() {
             entry.id = id_generator(&entry.links, &entry.title, uri);
         }
@@ -331,6 +333,7 @@ const LINK_HASH_KEY2: u64 = 0x90ee_ca4c_90a5_e228;
 // 1) the first link + optional title
 // 2) the uri + title provided
 // 3) a UUID
+#[must_use]
 pub fn generate_id(
     links: &[model::Link],
     title: &Option<model::Text>,
@@ -347,6 +350,7 @@ pub fn generate_id(
 }
 
 // Generate an ID from the link + title
+#[must_use]
 pub fn generate_id_from_link_and_title(link: &model::Link, title: &Option<model::Text>) -> String {
     let mut hasher = SipHasher::new_with_keys(LINK_HASH_KEY1, LINK_HASH_KEY2);
     hasher.write(link.href.as_bytes());
@@ -358,6 +362,7 @@ pub fn generate_id_from_link_and_title(link: &model::Link, title: &Option<model:
 }
 
 // Generate an ID from the URI and title
+#[must_use]
 pub fn generate_id_from_uri_and_title(uri: &str, title: &model::Text) -> String {
     let mut hasher = SipHasher::new_with_keys(LINK_HASH_KEY1, LINK_HASH_KEY2);
     hasher.write(uri.as_bytes());
