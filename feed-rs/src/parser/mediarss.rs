@@ -1,14 +1,14 @@
 use std::io::BufRead;
 use std::time::Duration;
 
-use mediatype::{names, MediaTypeBuf};
+use mediatype::{MediaTypeBuf, names};
 
 use crate::model::{
     Image, MediaCommunity, MediaContent, MediaCredit, MediaObject, MediaRating, MediaText,
     MediaThumbnail, Text,
 };
 use crate::parser::util::{if_ok_then_some, if_some_then, parse_npt};
-use crate::parser::{util, ParseErrorKind, ParseFeedError, ParseFeedResult};
+use crate::parser::{ParseErrorKind, ParseFeedError, ParseFeedResult, util};
 use crate::xml::{Element, NS};
 
 // TODO When an element appears at a shallow level, such as <channel> or <item>, it means that the element should be applied to every media object within its scope.
@@ -16,12 +16,12 @@ use crate::xml::{Element, NS};
 
 /// Handles the top-level "media:group", a collection of mediarss elements.
 pub fn handle_media_group<R: BufRead>(
-    element: Element<R>,
+    element: &Element<R>,
 ) -> ParseFeedResult<Option<MediaObject>> {
     let mut media_obj = MediaObject::default();
 
     for child in element.children() {
-        let child = child?;
+        let child = &child?;
         if child.ns_and_tag().0 == NS::MediaRSS {
             handle_media_element(child, &mut media_obj)?;
         }
@@ -34,7 +34,7 @@ pub fn handle_media_group<R: BufRead>(
 /// This isn't the typical pattern, but `MediaRSS` has a strange shape (content within group, with other elements as peers...or no group and some elements as children)
 /// So this signature is used to parse into a media object from a group, or a default one created at the entry level
 pub fn handle_media_element<R: BufRead>(
-    element: Element<R>,
+    element: &Element<R>,
     media_obj: &mut MediaObject,
 ) -> ParseFeedResult<()> {
     // Top level elements that should be propagated down to content items
@@ -81,12 +81,12 @@ pub fn handle_media_element<R: BufRead>(
 
 // Handle "media:community"
 fn handle_media_community<R: BufRead>(
-    element: Element<R>,
+    element: &Element<R>,
 ) -> ParseFeedResult<Option<MediaCommunity>> {
     let mut community = MediaCommunity::new();
 
     for child in element.children() {
-        let child = child?;
+        let child = &child?;
         match child.ns_and_tag() {
             (NS::MediaRSS, "starRating") => {
                 for attr in &child.attributes {
@@ -135,7 +135,7 @@ fn handle_media_community<R: BufRead>(
 
 // Handle the core attributes and elements from "media:content"
 fn handle_media_content<R: BufRead>(
-    element: Element<R>,
+    element: &Element<R>,
     media_obj: &mut MediaObject,
 ) -> ParseFeedResult<()> {
     let mut content = MediaContent::new();
@@ -165,7 +165,7 @@ fn handle_media_content<R: BufRead>(
 
     // Extract information from the child elements
     for child in element.children() {
-        let child = child?;
+        let child = &child?;
         match child.ns_and_tag() {
             (NS::MediaRSS, "player") => {
                 // According to the spec at https://www.rssboard.org/media-rss#media-content
@@ -219,12 +219,12 @@ fn handle_media_content<R: BufRead>(
 }
 
 // Handles the "media:credit" element
-fn handle_media_credit<R: BufRead>(element: Element<R>) -> Option<MediaCredit> {
+fn handle_media_credit<R: BufRead>(element: &Element<R>) -> Option<MediaCredit> {
     element.child_as_text().map(MediaCredit::new)
 }
 
 // Handles the "media:rating" element
-fn handle_media_rating<R: BufRead>(element: Element<R>) -> Option<MediaRating> {
+fn handle_media_rating<R: BufRead>(element: &Element<R>) -> Option<MediaRating> {
     // Schema is "urn:simple" by default
     let scheme = element
         .attr_value("scheme")
@@ -236,7 +236,7 @@ fn handle_media_rating<R: BufRead>(element: Element<R>) -> Option<MediaRating> {
 }
 
 // Handles the "media:text" element
-fn handle_media_text<R: BufRead>(element: Element<R>) -> Option<MediaText> {
+fn handle_media_text<R: BufRead>(element: &Element<R>) -> Option<MediaText> {
     let mut start_time = None;
     let mut end_time = None;
     let mut mime = None;
@@ -259,8 +259,9 @@ fn handle_media_text<R: BufRead>(element: Element<R>) -> Option<MediaText> {
 
     element.child_as_text().map(|t| {
         // Parse out the actual text of this element
-        let mut text = Text::new(t);
-        text.content_type = mime.map_or(MediaTypeBuf::new(names::TEXT, names::PLAIN), |m| m);
+        let mut text = Text::new(&t);
+        text.content_type =
+            mime.map_or_else(|| MediaTypeBuf::new(names::TEXT, names::PLAIN), |m| m);
         let mut media_text = MediaText::new(text);
 
         // Add the time boundaries if we found them
@@ -272,7 +273,7 @@ fn handle_media_text<R: BufRead>(element: Element<R>) -> Option<MediaText> {
 }
 
 // Handles the "media:thumbnail" element
-fn handle_media_thumbnail<R: BufRead>(element: Element<R>) -> Option<MediaThumbnail> {
+fn handle_media_thumbnail<R: BufRead>(element: &Element<R>) -> Option<MediaThumbnail> {
     // Extract the attributes on the thumbnail element
     let mut url = None;
     let mut width = None;
@@ -293,7 +294,7 @@ fn handle_media_thumbnail<R: BufRead>(element: Element<R>) -> Option<MediaThumbn
     }
 
     // We need url at least to assemble the image
-    if let Some(url) = url {
+    url.map(|url| {
         let mut image = Image::new(url);
         image.width = width;
         image.height = height;
@@ -301,14 +302,12 @@ fn handle_media_thumbnail<R: BufRead>(element: Element<R>) -> Option<MediaThumbn
         let mut thumbnail = MediaThumbnail::new(image);
         thumbnail.time = time;
 
-        Some(thumbnail)
-    } else {
-        None
-    }
+        thumbnail
+    })
 }
 
 // Handles a title or description element
-fn handle_text<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Text>> {
+fn handle_text<R: BufRead>(element: &Element<R>) -> ParseFeedResult<Option<Text>> {
     // Find type, defaulting to "plain" if not present
     let type_attr = element
         .attributes
@@ -329,7 +328,7 @@ fn handle_text<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Text>>
     element
         .children_as_string()?
         .map(|content| {
-            let mut text = Text::new(content);
+            let mut text = Text::new(&content);
             text.content_type = mime;
             Some(text)
         })

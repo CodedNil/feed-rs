@@ -1,20 +1,19 @@
+use crate::model;
+use crate::parser::{ParseFeedResult, Parser};
+use crate::xml::Element;
+use chrono::{DateTime, Utc};
+use fixes::PatSub;
+use model::{Link, Text};
+use regex_lite::{Captures, Regex};
 use std::error::Error;
 use std::io::BufRead;
 use std::ops::Add;
 use std::sync::OnceLock;
 use std::time::Duration;
-
-use chrono::{DateTime, Utc};
-use regex_lite::{Captures, Regex};
 use url::Url;
 use uuid::Uuid;
 
-use fixes::PatSub;
-use model::{Link, Text};
-
-use crate::model;
-use crate::parser::{ParseFeedResult, Parser};
-use crate::xml::Element;
+static NPT_SEC: OnceLock<Regex> = OnceLock::new();
 
 /// Set of regular expressions we use to clean up broken dates
 mod fixes {
@@ -93,8 +92,8 @@ pub type TimestampParser = dyn Fn(&str) -> Option<DateTime<Utc>> + 'static;
 pub type IdGenerator = dyn Fn(&[Link], &Option<Text>, Option<&str>) -> String;
 
 /// Handles <content:encoded>
-pub fn handle_encoded<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Text>> {
-    Ok(element.children_as_string()?.map(Text::html))
+pub fn handle_encoded<R: BufRead>(element: &Element<R>) -> ParseFeedResult<Option<Text>> {
+    Ok(element.children_as_string()?.map(|text| Text::html(&text)))
 }
 
 // Handles "xml:lang" as an attribute (e.g. in Atom feeds)
@@ -108,16 +107,16 @@ pub fn handle_base_attr<R: BufRead>(element: &Element<R>) -> Option<String> {
 }
 
 // Handles <link>
-pub fn handle_link<R: BufRead>(element: Element<R>) -> Option<Link> {
+pub fn handle_link<R: BufRead>(element: &Element<R>) -> Option<Link> {
     element
         .child_as_text()
         .map(|s| Link::new(s, element.xml_base.as_ref()))
 }
 
 // Handles <title>, <description> etc
-pub fn handle_text<R: BufRead>(element: Element<R>) -> Option<Text> {
+pub fn handle_text<R: BufRead>(element: &Element<R>) -> Option<Text> {
     if let Ok(Some(text)) = element.children_as_string() {
-        Some(Text::new(text))
+        Some(Text::new(&text))
     } else {
         None
     }
@@ -126,13 +125,11 @@ pub fn handle_text<R: BufRead>(element: Element<R>) -> Option<Text> {
 /// Handles date/time
 pub fn handle_timestamp<R: BufRead>(
     parser: &Parser,
-    element: Element<R>,
+    element: &Element<R>,
 ) -> Option<DateTime<Utc>> {
-    if let Some(text) = element.child_as_text() {
-        parser.parse_timestamp(&text)
-    } else {
-        None
-    }
+    element
+        .child_as_text()
+        .and_then(|text| parser.parse_timestamp(&text))
 }
 
 /// Simplifies the "if let ... = parse ... assign" block
@@ -169,9 +166,10 @@ pub fn parse_uri(uri: &str, base: Option<&Url>) -> Option<Url> {
         // If its a relative URL we need to add the base
         Err(url::ParseError::RelativeUrlWithoutBase) => {
             if let Some(base) = base
-                && let Ok(with_base) = base.join(uri) {
-                    return Some(with_base);
-                }
+                && let Ok(with_base) = base.join(uri)
+            {
+                return Some(with_base);
+            }
 
             None
         }
@@ -234,7 +232,7 @@ pub fn parse_npt(text: &str) -> Option<Duration> {
         // Extract hours (h), minutes (m), seconds (s) and fractional seconds (f)
         Regex::new(r"(?P<h>\d+):(?P<m>\d{2}):(?P<s>\d{2})(\.(?P<f>\d+))?").unwrap()
     });
-    if let Some(captures) = npt_hhmmss.captures(text) {
+    if let Some(captures) = &npt_hhmmss.captures(text) {
         let h = captures.name("h");
         let m = captures.name("m");
         let s = captures.name("s");
@@ -254,38 +252,36 @@ pub fn parse_npt(text: &str) -> Option<Duration> {
     }
 
     // Next try npt-sec
-    static NPT_SEC: OnceLock<Regex> = OnceLock::new();
     let npt_sec = NPT_SEC.get_or_init(|| {
         // Extract seconds (s) and fractional seconds (f)
         Regex::new(r"(?P<s>\d+)(\.(?P<f>\d+))?").unwrap()
     });
-    if let Some(captures) = npt_sec.captures(text)
-        && let Some(s) = captures.name("s") {
-            // Parse the seconds
-            let seconds = s.as_str().parse::<u64>().unwrap();
-            let mut duration = Duration::from_secs(seconds);
+    if let Some(captures) = &npt_sec.captures(text)
+        && let Some(s) = captures.name("s")
+    {
+        // Parse the seconds
+        let seconds = s.as_str().parse::<u64>().unwrap();
+        let mut duration = Duration::from_secs(seconds);
 
-            // Add fractional seconds if present
-            duration = parse_npt_add_frac_sec(duration, captures);
+        // Add fractional seconds if present
+        duration = parse_npt_add_frac_sec(duration, captures);
 
-            return Some(duration);
-        }
+        return Some(duration);
+    }
 
     // Just drop it
     None
 }
 
 // Adds the fractional seconds if present
-fn parse_npt_add_frac_sec(duration: Duration, captures: Captures) -> Duration {
-    if let Some(frac) = captures.name("f") {
+fn parse_npt_add_frac_sec(duration: Duration, captures: &Captures) -> Duration {
+    captures.name("f").map_or(duration, |frac| {
         let frac = frac.as_str();
         let denom = 10f32.powi(frac.len() as i32);
         let num = frac.parse::<f32>().unwrap();
         let millis = (1000f32 * (num / denom)) as u64;
         duration.add(Duration::from_millis(millis))
-    } else {
-        duration
-    }
+    })
 }
 
 #[cfg(test)]
@@ -353,7 +349,7 @@ mod tests {
 
         for (source, expected) in tests {
             let parsed = parse_timestamp_lenient(source)
-                .unwrap_or_else(|| panic!("failed to parse {}", source));
+                .unwrap_or_else(|| panic!("failed to parse {source}"));
             assert_eq!(parsed, expected);
         }
     }
@@ -375,7 +371,7 @@ mod tests {
 
         for (source, expected) in tests {
             let parsed = parse_timestamp_lenient(source)
-                .unwrap_or_else(|| panic!("failed to parse {}", source));
+                .unwrap_or_else(|| panic!("failed to parse {source}"));
             assert_eq!(parsed, expected);
         }
     }

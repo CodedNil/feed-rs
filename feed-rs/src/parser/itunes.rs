@@ -4,14 +4,14 @@ use std::time::Duration;
 use crate::model::{
     Category, Feed, Image, MediaCredit, MediaObject, MediaRating, MediaThumbnail, Person,
 };
+use crate::parser::ParseFeedResult;
 use crate::parser::atom;
 use crate::parser::util::{if_some_then, parse_npt};
-use crate::parser::ParseFeedResult;
 use crate::xml::{Element, NS};
 
 // Process <itunes> elements at channel level updating the Feed object as required
 pub fn handle_itunes_channel_element<R: BufRead>(
-    element: Element<R>,
+    element: &Element<R>,
     feed: &mut Feed,
 ) -> ParseFeedResult<()> {
     match element.ns_and_tag() {
@@ -49,7 +49,7 @@ pub fn handle_itunes_channel_element<R: BufRead>(
 
 // Process <itunes> elements at item level and turn them into something that looks like MediaRSS objects.
 pub fn handle_itunes_item_element<R: BufRead>(
-    element: Element<R>,
+    element: &Element<R>,
     media_obj: &mut MediaObject,
 ) -> ParseFeedResult<()> {
     match element.ns_and_tag() {
@@ -77,23 +77,24 @@ pub fn handle_itunes_item_element<R: BufRead>(
 }
 
 // Handles <itunes:author>
-fn handle_author<R: BufRead>(element: Element<R>) -> Option<MediaCredit> {
+fn handle_author<R: BufRead>(element: &Element<R>) -> Option<MediaCredit> {
     element.child_as_text().map(MediaCredit::new)
 }
 
 // Handles <itunes:category>
-fn handle_category<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Category>> {
+fn handle_category<R: BufRead>(element: &Element<R>) -> ParseFeedResult<Option<Category>> {
     Ok(if let Some(text) = element.attr_value("text") {
         // Create a new category for this level
         let mut category = Category::new(&text);
 
         // Add any sub-categories
         for child in element.children() {
-            let child = child?;
+            let child = &child?;
             if child.ns_and_tag() == (NS::Itunes, "category")
-                && let Some(subcat) = handle_category(child)? {
-                    category.subcategories.push(subcat);
-                }
+                && let Some(subcat) = handle_category(child)?
+            {
+                category.subcategories.push(subcat);
+            }
         }
 
         Some(category)
@@ -103,12 +104,12 @@ fn handle_category<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Ca
 }
 
 // Handles <itunes:duration>
-fn handle_duration<R: BufRead>(element: Element<R>) -> Option<Duration> {
+fn handle_duration<R: BufRead>(element: &Element<R>) -> Option<Duration> {
     element.child_as_text().and_then(|text| parse_npt(&text))
 }
 
 // Handles <itunes:explicit> by mapping to {true|false} and wrapping in MediaRating instance
-fn handle_explicit<R: BufRead>(element: Element<R>) -> Option<MediaRating> {
+fn handle_explicit<R: BufRead>(element: &Element<R>) -> Option<MediaRating> {
     element
         .child_as_text()
         .filter(|v| v.to_lowercase() == "true")
@@ -116,19 +117,19 @@ fn handle_explicit<R: BufRead>(element: Element<R>) -> Option<MediaRating> {
 }
 
 // Handles <itunes:image>
-fn handle_image<R: BufRead>(element: Element<R>) -> Option<MediaThumbnail> {
+fn handle_image<R: BufRead>(element: &Element<R>) -> Option<MediaThumbnail> {
     element
         .attr_value("href")
         .map(|url| MediaThumbnail::new(Image::new(url)))
 }
 
 // Handles <itunes:owner>
-fn handle_owner<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Person>> {
+fn handle_owner<R: BufRead>(element: &Element<R>) -> ParseFeedResult<Option<Person>> {
     let mut email = None;
     let mut name = None;
 
     for child in element.children() {
-        let child = child?;
+        let child = &child?;
         match child.ns_and_tag() {
             (NS::Itunes, "email") => email = child.child_as_text(),
             (NS::Itunes, "name") => name = child.child_as_text(),

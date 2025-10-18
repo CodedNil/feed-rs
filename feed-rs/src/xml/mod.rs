@@ -149,7 +149,7 @@ impl<R: BufRead> ElementSource<R> {
                 }
 
                 // Not interested in other events when looking for elements
-                _ => {}
+                XmlEvent::Text(_) => {}
             }
 
             // If we have hit the end of children at this level we terminate
@@ -220,9 +220,10 @@ impl<R: BufRead> ElementSource<R> {
                 Err(url::ParseError::RelativeUrlWithoutBase) => {
                     // Try and form a new URL and push it to the stack
                     if let Some((_, last)) = state.base_uris.last()
-                        && let Ok(with_base) = last.join(xml_base) {
-                            state.base_uris.push((state.current_depth, with_base));
-                        }
+                        && let Ok(with_base) = last.join(xml_base)
+                    {
+                        state.base_uris.push((state.current_depth, with_base));
+                    }
                 }
                 Err(e) => return Err(XmlError::Url { e }),
             }
@@ -283,8 +284,9 @@ impl<R: BufRead> SourceState<R> {
                             .decode(ns.as_ref())
                             .map(|decoded| NS::parse(decoded.as_ref()))
                             .unwrap_or(self.default_namespace),
-                        ResolveResult::Unknown(_) => self.default_namespace,
-                        ResolveResult::Unbound => self.default_namespace,
+                        ResolveResult::Unknown(_) | ResolveResult::Unbound => {
+                            self.default_namespace
+                        }
                     };
 
                     return Ok(Some(XmlEvent::start(namespace, e, reader)));
@@ -331,7 +333,7 @@ impl<R: BufRead> SourceState<R> {
 
     // Peeks the next event (does not advance)
     // Callers should call next() to consume the event to move on
-    const fn peek(&mut self) -> &XmlResult<Option<XmlEvent>> {
+    const fn peek(&self) -> &XmlResult<Option<XmlEvent>> {
         &self.next
     }
 }
@@ -560,15 +562,13 @@ impl XmlEvent {
             .attributes()
             .filter_map(|a| {
                 if let Ok(a) = a {
-                    let name = match reader.decoder().decode(a.key.as_ref()) {
-                        Ok(decoded) => decoded,
-                        Err(_) => return None,
+                    let Ok(name) = reader.decoder().decode(a.key.as_ref()) else {
+                        return None;
                     };
 
                     // Unescape the XML attribute, or use the original value if this fails (broken escape sequence etc)
-                    let decoded_value = match reader.decoder().decode(&a.value) {
-                        Ok(decoded) => decoded,
-                        Err(_) => return None,
+                    let Ok(decoded_value) = reader.decoder().decode(&a.value) else {
+                        return None;
                     };
                     let value = quick_xml::escape::unescape(&decoded_value)
                         .unwrap_or_else(|_| decoded_value.clone())

@@ -1,13 +1,11 @@
-use std::time::Duration;
-
-use chrono::{TimeZone, Utc};
-use mediatype::{MediaType, names};
-use url::Url;
-
 use crate::model::*;
 use crate::parser;
 use crate::parser::util;
 use crate::util::test;
+use chrono::{TimeZone, Utc};
+use mediatype::{MediaType, names};
+use std::time::Duration;
+use url::Url;
 
 // Basic example from various sources (Wikipedia etc).
 #[test]
@@ -19,17 +17,17 @@ fn test_example_1() {
     // Expected feed
     let expected = Feed::new(FeedType::RSS2)
         .id(actual.id.as_ref()) // not present in the test data
-        .title(Text::new("RSS Title".into()))
-        .description(Text::new("This is an example of an RSS feed".into()))
+        .title(Text::new("RSS Title"))
+        .description(Text::new("This is an example of an RSS feed"))
         .link(Link::new("http://www.example.com/main.html", None))
         .updated_parsed("Mon, 06 Sep 2010 00:01:00 +0000")
         .published("Sun, 06 Sep 2009 16:20:00 +0000")
         .ttl(1800)
         .entry(
             Entry::default()
-                .title(Text::new("Example entry".into()))
+                .title(Text::new("Example entry"))
                 .summary(Text::html(
-                    "Here is some text containing an interesting description.".into(),
+                    "Here is some text containing an interesting description.",
                 ))
                 .link(Link::new("http://www.example.com/blog/post/1", None))
                 .id("7bd204c6-1655-4c27-aeee-53f933c5395f")
@@ -52,8 +50,8 @@ fn test_example_2() {
     let expected: Feed = Feed::new(FeedType::RSS2)
         .id(actual.id.as_ref())     // not present in the test data
         .updated(actual.updated)    // not present in the test data
-        .title(Text::new("NASA Breaking News".into()))
-        .description(Text::new("A RSS news feed containing the latest NASA news articles and press releases.".into()))
+        .title(Text::new("NASA Breaking News"))
+        .description(Text::new("A RSS news feed containing the latest NASA news articles and press releases."))
         .link(Link::new("http://www.nasa.gov/", None))
         .link(Link::new("http://www.nasa.gov/rss/dyn/breaking_news.rss", None)
             .rel("self"))
@@ -63,12 +61,12 @@ fn test_example_2() {
         .contributor(Person::new("webMaster")
             .email("brian.dunbar@nasa.gov"))
         .entry(Entry::default()
-            .title(Text::new("NASA Television to Broadcast Space Station Departure of Cygnus Cargo Ship".into()))
+            .title(Text::new("NASA Television to Broadcast Space Station Departure of Cygnus Cargo Ship"))
             .link(Link::new("http://www.nasa.gov/press-release/nasa-television-to-broadcast-space-station-departure-of-cygnus-cargo-ship", None))
-            .summary(Text::html(r#"More than three months after delivering several tons of supplies and scientific experiments to
+            .summary(Text::html(r"More than three months after delivering several tons of supplies and scientific experiments to
                 the International Space Station, Northrop Grumman’s Cygnus cargo spacecraft, the SS Roger Chaffee, will
                 depart the orbiting laboratory Tuesday, Aug. 6.
-            "#.to_owned()))
+            "))
             .id("http://www.nasa.gov/press-release/nasa-television-to-broadcast-space-station-departure-of-cygnus-cargo-ship")
             .published("Thu, 01 Aug 2019 16:15 EDT")
             .updated_parsed("Thu, 01 Aug 2019 16:15 EDT")
@@ -92,21 +90,21 @@ fn test_example_3() {
     // Expected feed
     let expected = Feed::new(FeedType::RSS2)
         .id(actual.id.as_ref())     // not present in the test data
-        .title(Text::new("News, Politics, Opinion, Commentary, and Analysis".into()))
-        .description(Text::new("In-depth reporting, commentary on breaking news, political analysis, and opinion from The New\n            Yorker.".into()))
+        .title(Text::new("News, Politics, Opinion, Commentary, and Analysis"))
+        .description(Text::new("In-depth reporting, commentary on breaking news, political analysis, and opinion from The New\n            Yorker."))
         .link(Link::new("https://www.newyorker.com/news", None))
         .link(Link::new("https://www.newyorker.com/feed/news/rss", None)
             .rel("self")
             .media_type("application/atom+xml"))
-        .rights(Text::new("© Condé Nast 2019".into()))
+        .rights(Text::new("© Condé Nast 2019"))
         .language("en")
         .updated_parsed("Tue, 06 Aug 2019 10:46:05 +0000")
         .entry(Entry::default()
-            .title(Text::new("How a Historian Uncovered Ronald Reagan’s Racist Remarks to Richard Nixon".into()))
+            .title(Text::new("How a Historian Uncovered Ronald Reagan’s Racist Remarks to Richard Nixon"))
             .link(Link::new("https://www.newyorker.com/news/q-and-a/how-a-historian-uncovered-ronald-reagans-racist-remarks-to-richard-nixon", None))
             .id("5d420f3abfe6c20008d5eaad")
             .author(Person::new("Isaac Chotiner"))
-            .summary(Text::html("Isaac Chotiner talks with the historian Tim Naftali, who published the text and audio of a\n                taped call, from 1971, in which Reagan described the African delegates to the U.N. in luridly racist\n                terms.\n            ".into()))
+            .summary(Text::html("Isaac Chotiner talks with the historian Tim Naftali, who published the text and audio of a\n                taped call, from 1971, in which Reagan described the African delegates to the U.N. in luridly racist\n                terms.\n            "))
             .category(Category::new("News / Q. & A."))
             .published("Fri, 02 Aug 2019 15:35:34 +0000")
             .updated_parsed("Fri, 02 Aug 2019 15:35:34 +0000")
@@ -131,17 +129,17 @@ fn test_example_4() {
     // Expected feed
     let expected = Feed::new(FeedType::RSS2)
         .id(actual.id.as_ref())     // not present in the test data
-        .title(Text::new("Earthquakes today".into()))
+        .title(Text::new("Earthquakes today"))
         .link(Link::new("http://www.earthquakenewstoday.com/feed/", None)
             .rel("self")
             .media_type("application/rss+xml"))
         .link(Link::new("http://www.earthquakenewstoday.com", None))
-        .description(Text::new("Current and latest world earthquakes breaking news, activity and articles today".into()))
+        .description(Text::new("Current and latest world earthquakes breaking news, activity and articles today"))
         .updated_parsed("Tue, 06 Aug 2019 05:01:15 +0000")
         .language("en-us")
         .generator(Generator::new("https://wordpress.org/?v=5.1.1"))
         .entry(Entry::default()
-            .title(Text::new("Minor earthquake, 3.5 mag was detected near Aris in Greece".into()))
+            .title(Text::new("Minor earthquake, 3.5 mag was detected near Aris in Greece"))
             .author(Person::new("admin"))
             .link(Link::new("http://www.earthquakenewstoday.com/2019/08/06/minor-earthquake-3-5-mag-was-detected-near-aris-in-greece/", None))
             .published("Tue, 06 Aug 2019 05:01:15 +0000")
@@ -149,7 +147,7 @@ fn test_example_4() {
             .category(Category::new("Minor World Earthquakes Magnitude -3.9"))
             .category(Category::new("Spárti"))
             .id("http://www.earthquakenewstoday.com/2019/08/06/minor-earthquake-3-5-mag-was-detected-near-aris-in-greece/")
-            .summary(Text::html("A minor earthquake magnitude 3.5 (ml/mb) strikes near Kalamáta, Trípoli, Pýrgos, Spárti, Filiatrá, Messíni, Greece on Tuesday.".into()))
+            .summary(Text::html("A minor earthquake magnitude 3.5 (ml/mb) strikes near Kalamáta, Trípoli, Pýrgos, Spárti, Filiatrá, Messíni, Greece on Tuesday."))
             .content(Content::default()
                 .body("<p><img class='size-full alignleft' title='Earthquake location 37.102S, 21.9072W' alt='Earthquake location 37.102S, 21.9072W' src='http://www.earthquakenewstoday.com/wp-content/uploads/35_20.jpg' width='146' height='146' />A minor earthquake with magnitude 3.5 (ml/mb) was detected on Tuesday, 8 kilometers (5 miles) from Aris in Greece.Exact location of event, depth 10 km, 21.9072&deg; East, 37.102&deg; North. </p>")
                 .content_type("text/html"))
@@ -169,7 +167,7 @@ fn test_example_5() {
     // Expected feed
     let expected = Feed::new(FeedType::RSS2)
         .id(actual.id.as_ref()) // not present in the test data
-        .title(Text::new("Ars Technica".into()))
+        .title(Text::new("Ars Technica"))
         .link(Link::new("https://arstechnica.com", None))
         .link(
             Link::new("http://feeds.arstechnica.com/arstechnica/index", None)
@@ -178,7 +176,7 @@ fn test_example_5() {
         )
         .link(Link::new("http://pubsubhubbub.appspot.com/", None).rel("hub"))
         .description(Text::new(
-            "Serving the Technologist for more than a decade. IT news, reviews, and analysis.".into(),
+            "Serving the Technologist for more than a decade. IT news, reviews, and analysis.",
         ))
         .updated_parsed("Tue, 06 Aug 2019 00:03:56 +0000")
         .language("en-us")
@@ -193,7 +191,7 @@ fn test_example_5() {
         .entry(
             Entry::default()
                 .title(Text::new(
-                    "Apple isn’t the most cash-rich company in the world anymore, but it doesn’t matter".into(),
+                    "Apple isn’t the most cash-rich company in the world anymore, but it doesn’t matter",
                 ))
                 .link(Link::new("https://arstechnica.com/?p=1546121", None))
                 .published("Mon, 05 Aug 2019 23:11:09 +0000")
@@ -204,7 +202,7 @@ fn test_example_5() {
                 .category(Category::new("google"))
                 .id("https://arstechnica.com/?p=1546121")
                 .author(Person::new("Samuel Axon"))
-                .summary(Text::html("Alphabet has $117 billion in cash on hand.".into()))
+                .summary(Text::html("Alphabet has $117 billion in cash on hand."))
                 .content(
                     Content::default()
                         .body("Google co-founder Larry Page is now CEO of Alphabet.")
@@ -228,17 +226,17 @@ fn test_example_6() {
     // Expected feed
     let expected = Feed::new(FeedType::RSS2)
         .id("b2ef47d837e6c0d9d757e14852e5bde")     // hash of the link
-        .title(Text::new("Latest Movie Trailers".into()))
+        .title(Text::new("Latest Movie Trailers"))
         .link(Link::new("https://trailers.apple.com/", None))
-        .description(Text::new("Recently added Movie Trailers.".into()))
+        .description(Text::new("Recently added Movie Trailers."))
         .language("en-us")
         .updated_parsed("2020-02-07T15:30:28Z")
         .generator(Generator::new("Custom"))
-        .rights(Text::new("2020 Apple Inc.".into()))
+        .rights(Text::new("2020 Apple Inc."))
         .entry(Entry::default()
-            .title(Text::new("Vitalina Varela - Trailer".into()))
+            .title(Text::new("Vitalina Varela - Trailer"))
             .link(Link::new("https://trailers.apple.com/trailers/independent/vitalina-varela", None))
-            .summary(Text::html("A film of deeply concentrated beauty, acclaimed filmmaker Pedro Costa’s VITALINA VARELA stars nonprofessional actor Vitalina Varela in an extraordinary performance based on her own life. Vitalina plays a Cape Verdean woman who has travelled to Lisbon to reunite with her husband, after two decades of separation, only to arrive mere days after his funeral. Alone in a strange forbidding land, she perseveres and begins to establish a new life. Winner of the Golden Leopard for Best Film and Best Actress at the Locarno Film Festival, as well as an official selection of the Sundance Film Festival, VITALINA VARELA is a film of shadow and whisper, a profoundly moving and visually ravishing masterpiece.".into()))
+            .summary(Text::html("A film of deeply concentrated beauty, acclaimed filmmaker Pedro Costa’s VITALINA VARELA stars nonprofessional actor Vitalina Varela in an extraordinary performance based on her own life. Vitalina plays a Cape Verdean woman who has travelled to Lisbon to reunite with her husband, after two decades of separation, only to arrive mere days after his funeral. Alone in a strange forbidding land, she perseveres and begins to establish a new life. Winner of the Golden Leopard for Best Film and Best Actress at the Locarno Film Festival, as well as an official selection of the Sundance Film Festival, VITALINA VARELA is a film of shadow and whisper, a profoundly moving and visually ravishing masterpiece."))
             .content(Content::default()
                 .body(r#"<span style="font-size: 16px; font-weight: 900; text-decoration: underline;">Vitalina Varela - Trailer</span>"#)
                 .content_type("text/html"))
@@ -275,11 +273,11 @@ fn test_spec_1() {
     // Expected feed
     let expected = Feed::new(FeedType::RSS2)
         .id(actual.id.as_ref()) // not present in the test data
-        .title(Text::new("Scripting News".into()))
+        .title(Text::new("Scripting News"))
         .link(Link::new("http://www.scripting.com/", None))
-        .description(Text::new("A weblog about scripting and stuff like that.".into()))
+        .description(Text::new("A weblog about scripting and stuff like that."))
         .language("en-us")
-        .rights(Text::new("Copyright 1997-2002 Dave Winer".into()))
+        .rights(Text::new("Copyright 1997-2002 Dave Winer"))
         .updated_parsed("Mon, 30 Sep 2002 11:00:00 GMT")
         .generator(Generator::new("Radio UserLand v8.0.5"))
         .category(Category::new("1765").scheme("Syndic8"))
@@ -292,7 +290,6 @@ fn test_spec_1() {
                     r#"Joshua Allen: <a href="http://www.netcrucible.com/blog/2002/09/29.html#a243">Who
                 loves namespaces?</a>
             "#
-                    .to_owned(),
                 ))
                 .published("Sun, 29 Sep 2002 19:59:01 GMT")
                 .updated_parsed("Sun, 29 Sep 2002 19:59:01 GMT")
@@ -304,8 +301,7 @@ fn test_spec_1() {
                     r#"<a href="http://www.docuverse.com/blog/donpark/2002/09/29.html#a68">Don Park</a>:
                 "It is too easy for engineer to anticipate too much and XML Namespace is a frequent host of
                 over-anticipation."
-            "#
-                    .to_owned(),
+            "#,
                 ))
                 .published("Mon, 30 Sep 2002 01:52:02 GMT")
                 .updated_parsed("Mon, 30 Sep 2002 01:52:02 GMT")
@@ -382,7 +378,7 @@ fn test_spiegel() {
     let expected = Feed::new(FeedType::RSS2)
         .id(actual.id.as_ref()) // not present in the test data
         .language("de")
-        .title(Text::new("SPIEGEL Update – Die Nachrichten".into()))
+        .title(Text::new("SPIEGEL Update – Die Nachrichten"))
         .author(Person::new("DER SPIEGEL"))
         .link(Link::new("https://www.omnycontent.com/d/playlist/5ac1e950-45c7-4eb7-87c0-aa0f018441b8/bb17ca27-51f4-4349-bc1e-abc00102c975/4c18e072-24d2-4d60-9a42-abc00102c97e/podcast.rss", None)
             .rel("self")
@@ -399,17 +395,17 @@ fn test_spiegel() {
         .link(Link::new("https://www.spiegel.de/thema/spiegel-update/", None))
         .category(Category::new("News"))
         .contributor(Person::new("SPIEGEL Update – Die Nachrichten").email("charlotte.meyer-hamme@spiegel.de"))
-        .description(Text::new("<p>Die wichtigsten Nachrichten des Tages &ndash; erg&auml;nzt um Meinungen und Empfehlungen aus der SPIEGEL-Redaktion. Wochentags aktualisieren wir morgens, mittags und abends unsere Meldungen. Am Wochenende blicken wir zur&uuml;ck auf die vergangene Woche &ndash; und erkl&auml;ren, was in der n&auml;chsten Woche wichtig wird.</p>".into()))
-        .rights(Text::new("2021 DER SPIEGEL GmbH & Co. KG".into()))
+        .description(Text::new("<p>Die wichtigsten Nachrichten des Tages &ndash; erg&auml;nzt um Meinungen und Empfehlungen aus der SPIEGEL-Redaktion. Wochentags aktualisieren wir morgens, mittags und abends unsere Meldungen. Am Wochenende blicken wir zur&uuml;ck auf die vergangene Woche &ndash; und erkl&auml;ren, was in der n&auml;chsten Woche wichtig wird.</p>"))
+        .rights(Text::new("2021 DER SPIEGEL GmbH & Co. KG"))
         .logo(Image::new("https://www.omnycontent.com/d/programs/5ac1e950-45c7-4eb7-87c0-aa0f018441b8/bb17ca27-51f4-4349-bc1e-abc00102c975/image.jpg?t=1589902935&size=Large".into())
             .title("SPIEGEL Update – Die Nachrichten")
             .link("https://www.spiegel.de/thema/spiegel-update/")
         )
         .entry(
             Entry::default()
-                .title(Text::new("07.02. – die Wochenvorschau: Lockdown-Verlängerung, Kriegsverbrecher vor Gericht, Super Bowl, Karneval".into()))
+                .title(Text::new("07.02. – die Wochenvorschau: Lockdown-Verlängerung, Kriegsverbrecher vor Gericht, Super Bowl, Karneval"))
                 .content(Content::default().body(r#"Die wichtigsten Nachrichten aus der SPIEGEL-Redaktion. <br><br><p>See <a href="https://omnystudio.com/listener">omnystudio.com/listener</a> for privacy information.</p>"#).content_type("text/html"))
-                .summary(Text::html("Die wichtigsten Nachrichten aus der SPIEGEL-Redaktion. \nSee omnystudio.com/listener for privacy information.".into()))
+                .summary(Text::html("Die wichtigsten Nachrichten aus der SPIEGEL-Redaktion. \nSee omnystudio.com/listener for privacy information."))
                 .link(Link::new("https://omny.fm/shows/spiegel-update-die-nachrichten/07-02-die-wochenvorschau-lockdown-verl-ngerung-kri", None))
                 .published("2021-02-06T23:01:00Z")
                 .updated_parsed("2021-02-06T23:01:00Z")
@@ -462,7 +458,7 @@ fn test_bbc() {
     // Expected feed
     let expected = Feed::new(FeedType::RSS2)
         .id(actual.id.as_ref()) // not present in the test data
-        .title(Text::new("In Our Time".into()))
+        .title(Text::new("In Our Time"))
         .link(Link::new("http://www.bbc.co.uk/programmes/b006qykl", None))
         .link(
             Link::new("http://www.bbc.co.uk/programmes/b006qykl/episodes/downloads.rss", None)
@@ -470,7 +466,7 @@ fn test_bbc() {
                 .media_type("application/rss+xml"),
         )
         .category(Category::new("History"))
-        .description(Text::new("Melvyn Bragg and guests discuss the history of ideas".into()))
+        .description(Text::new("Melvyn Bragg and guests discuss the history of ideas"))
         .author(Person::new("BBC Radio 4"))
         .contributor(Person::new("BBC").email("RadioMusic.Support@bbc.co.uk"))
         .language("en")
@@ -479,12 +475,12 @@ fn test_bbc() {
                 .title("In Our Time")
                 .link("http://www.bbc.co.uk/programmes/b006qykl"),
         )
-        .rights(Text::new("(C) BBC 2021".into()))
+        .rights(Text::new("(C) BBC 2021"))
         .published("Thu, 25 Feb 2021 10:15:00 +0000")
         .entry(
             Entry::default()
-                .title(Text::new("Marcus Aurelius".into()))
-                .summary(Text::html("Melvyn Bragg and guests discuss...".into()))
+                .title(Text::new("Marcus Aurelius"))
+                .summary(Text::html("Melvyn Bragg and guests discuss..."))
                 .published("Thu, 25 Feb 2021 10:15:00 +0000")
                 .updated_parsed("Thu, 25 Feb 2021 10:15:00 +0000")
                 .id("urn:bbc:podcast:m000sjxt")
@@ -527,7 +523,7 @@ fn test_ch9() {
     // Expected feed
     let expected = Feed::new(FeedType::RSS2)
         .id(actual.id.as_ref()) // not present in the test data
-        .title(Text::new("Azure Friday (HD) - Channel 9".into()))
+        .title(Text::new("Azure Friday (HD) - Channel 9"))
         .logo(
             Image::new("https://f.ch9.ms/thumbnail/4761e196-da48-4b41-abfe-e56e0509f04d.png".into())
                 .title("Azure Friday (HD) - Channel 9")
@@ -535,7 +531,6 @@ fn test_ch9() {
         )
         .description(Text::new(
             "Join Scott Hanselman, Donovan Brown, or Lara Rubbelke as they host the engineers who build Azure, demo it, answer questions, and share insights."
-                .into(),
         ))
         .link(
             Link::new("https://s.ch9.ms/Shows/Azure-Friday/feed/mp4high", None)
@@ -551,8 +546,8 @@ fn test_ch9() {
         .generator(Generator::new("Rev9"))
         .entry(
             Entry::default()
-                .title(Text::new("Troubleshoot AKS cluster issues with AKS Diagnostics and AKS Periscope".into()))
-                .summary(Text::html("<p>Yun Jung Choi shows Scott Hanselman...".into()))
+                .title(Text::new("Troubleshoot AKS cluster issues with AKS Diagnostics and AKS Periscope"))
+                .summary(Text::html("<p>Yun Jung Choi shows Scott Hanselman..."))
                 .link(Link::new(
                     "https://channel9.msdn.com/Shows/Azure-Friday/Troubleshoot-AKS-cluster-issues-with-AKS-Diagnostics-and-AKS-Periscope",
                     None,
@@ -726,7 +721,7 @@ fn test_ghost_feeds() {
         "rss_2.0_element_io.xml",
     ];
     for file in files {
-        let test_data = test::fixture_as_string(&format!("rss2/{}", file));
+        let test_data = test::fixture_as_string(&format!("rss2/{file}"));
         let actual = parser::parse(test_data.as_bytes()).unwrap();
         for entry in actual.entries {
             assert!(entry.content.is_some());

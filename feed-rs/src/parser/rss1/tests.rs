@@ -1,8 +1,7 @@
-use mediatype::{names, MediaType};
-
 use crate::model::{Entry, Feed, FeedType, Image, Link, Person, Text};
 use crate::parser;
 use crate::util::test;
+use mediatype::{MediaType, names};
 
 // Example from the web
 #[test]
@@ -16,9 +15,9 @@ fn test_example_1() {
     let entry1 = actual.entries.get(1).unwrap();
     let expected = Feed::new(FeedType::RSS1)
         .id(actual.id.as_ref()) // not present in the test data
-        .title(Text::new("Feed title".into()))
+        .title(Text::new("Feed title"))
         .link(Link::new("http://www.example.com/main.html", None))
-        .description(Text::new("Site description".into()))
+        .description(Text::new("Site description"))
         .updated(actual.updated) // not present in the test data
         .published("2017-06-13T09:00:00Z")
         .language("ja")
@@ -26,9 +25,9 @@ fn test_example_1() {
             Entry::default()
                 .id("7d61c42a2d8ecf2289e789e1fb2035d1") // hash of the link
                 .updated(entry0.updated) // not present in the test data
-                .title(Text::new("記事1のタイトル".into()))
+                .title(Text::new("記事1のタイトル"))
                 .link(Link::new("記事1のURL", None))
-                .summary(Text::new("記事1の内容".into()))
+                .summary(Text::new("記事1の内容"))
                 .published("2017-06-13T09:00:00Z")
                 .author(Person::new("記事1の作者名")),
         )
@@ -36,9 +35,9 @@ fn test_example_1() {
             Entry::default()
                 .id("e342c1b080da9ffbfd10c0a6ba49395f") // hash of the link
                 .updated(entry1.updated) // not present in the test data
-                .title(Text::new("記事2のタイトル".into()))
+                .title(Text::new("記事2のタイトル"))
                 .link(Link::new("記事2のURL", None))
-                .summary(Text::new("記事2の内容".into()))
+                .summary(Text::new("記事2の内容"))
                 .author(Person::new("記事2の作者名")),
         );
 
@@ -54,14 +53,16 @@ fn test_example_2() {
     let feed = parser::parse(test_data.as_bytes()).unwrap();
 
     // content:encoded should be mapped to the content field
-    assert!(feed.entries[0]
-        .content
-        .as_ref()
-        .unwrap()
-        .body
-        .as_ref()
-        .unwrap()
-        .starts_with("This morning I saw two things that were Microsoft "));
+    assert!(
+        feed.entries[0]
+            .content
+            .as_ref()
+            .unwrap()
+            .body
+            .as_ref()
+            .unwrap()
+            .starts_with("This morning I saw two things that were Microsoft ")
+    );
     // content media type should be text/html.
     assert_eq!(
         feed.entries[0].content.as_ref().unwrap().content_type,
@@ -81,9 +82,9 @@ fn test_spec_1() {
     let entry1 = actual.entries.get(1).unwrap();
     let expected = Feed::new(FeedType::RSS1)
         .id(actual.id.as_ref())     // not present in the test data
-        .title(Text::new("XML.com".into()))
+        .title(Text::new("XML.com"))
         .link(Link::new("http://xml.com/pub", None))
-        .description(Text::new("XML.com features a rich mix of information and services\n            for the XML community.".into()))
+        .description(Text::new("XML.com features a rich mix of information and services\n            for the XML community."))
         .logo(Image::new("http://xml.com/universal/images/xml_tiny.gif".into())
             .link("http://www.xml.com")
             .title("XML.com"))
@@ -91,15 +92,15 @@ fn test_spec_1() {
         .entry(Entry::default()
             .id("958983927af7075ad55f6d2c9b0c24b2")     // hash of the link
             .updated(entry0.updated)            // not present in the test data
-            .title(Text::new("Processing Inclusions with XSLT".into()))
+            .title(Text::new("Processing Inclusions with XSLT"))
             .link(Link::new("http://xml.com/pub/2000/08/09/xslt/xslt.html", None))
-            .summary(Text::new("Processing document inclusions with general XML tools can be\n            problematic. This article proposes a way of preserving inclusion\n            information through SAX-based processing.".into())))
+            .summary(Text::new("Processing document inclusions with general XML tools can be\n            problematic. This article proposes a way of preserving inclusion\n            information through SAX-based processing.")))
         .entry(Entry::default()
             .id("54f62e9fe8901546d7e25c0827e1b8e8")     // hash of the link
             .updated(entry1.updated)            // not present in the test data
-            .title(Text::new("Putting RDF to Work".into()))
+            .title(Text::new("Putting RDF to Work"))
             .link(Link::new("http://xml.com/pub/2000/08/09/rdfdb/index.html", None))
-            .summary(Text::new("Tool and API support for the Resource Description Framework\n            is slowly coming of age. Edd Dumbill takes a look at RDFDB,\n            one of the most exciting new RDF toolkits.".into())));
+            .summary(Text::new("Tool and API support for the Resource Description Framework\n            is slowly coming of age. Edd Dumbill takes a look at RDFDB,\n            one of the most exciting new RDF toolkits.")));
 
     // Check
     assert_eq!(actual, expected);
@@ -116,9 +117,9 @@ fn test_spec_2() {
     let entry0 = actual.entries.first().unwrap();
     let expected = Feed::new(FeedType::RSS1)
         .id(actual.id.as_ref()) // not present in the test data
-        .title(Text::new("Meerkat".into()))
+        .title(Text::new("Meerkat"))
         .link(Link::new("http://meerkat.oreillynet.com", None))
-        .description(Text::new("Meerkat: An Open Wire Service".into()))
+        .description(Text::new("Meerkat: An Open Wire Service"))
         .logo(
             Image::new("http://meerkat.oreillynet.com/icons/meerkat-powered.jpg".into())
                 .link("http://meerkat.oreillynet.com")
@@ -126,18 +127,18 @@ fn test_spec_2() {
         )
         .updated(actual.updated) // not present in the test data
         .author(Person::new("Rael Dornfest (mailto:rael@oreilly.com)"))
-        .rights(Text::new("Copyright © 2000 O'Reilly & Associates, Inc.".into()))
+        .rights(Text::new("Copyright © 2000 O'Reilly & Associates, Inc."))
         .entry(
             Entry::default()
                 .id("acf7c86547d5d594af6d8f3327e84b06") // hash of the link
                 .updated(entry0.updated) // not present in the test data
-                .title(Text::new("XML: A Disruptive Technology".into()))
+                .title(Text::new("XML: A Disruptive Technology"))
                 .link(Link::new("http://c.moreover.com/click/here.pl?r123", None))
                 .summary(Text::new(
-                    "XML is placing increasingly heavy loads on the existing technical\n            infrastructure of the Internet.".into(),
+                    "XML is placing increasingly heavy loads on the existing technical\n            infrastructure of the Internet.",
                 ))
                 .author(Person::new("Simon St.Laurent (mailto:simonstl@simonstl.com)"))
-                .rights(Text::new("Copyright © 2000 O'Reilly & Associates, Inc.".into())),
+                .rights(Text::new("Copyright © 2000 O'Reilly & Associates, Inc.")),
         );
 
     // Check
@@ -174,6 +175,6 @@ fn test_bio_rxiv() {
     let test_data = test::fixture_as_raw("rss1/rss_1.0_biorxiv.xml");
     let actual = parser::parse(test_data.as_slice()).unwrap();
     for entry in actual.entries {
-        assert!(!entry.title.unwrap().content.is_empty())
+        assert!(!entry.title.unwrap().content.is_empty());
     }
 }

@@ -7,11 +7,11 @@ use super::*;
 
 type TestResult = std::result::Result<(), Box<dyn Error>>;
 
-fn handle_book<R: BufRead>(book: Element<R>) -> TestResult {
+fn handle_book<R: BufRead>(book: &Element<R>) -> TestResult {
     // Iterate over the children of the book
     let mut count = 0;
     for child in book.children() {
-        let child = child?;
+        let child = &child?;
         match child.name.as_str() {
             "author" => {
                 count += 1;
@@ -37,19 +37,21 @@ fn handle_book<R: BufRead>(book: Element<R>) -> TestResult {
     Ok(())
 }
 
-fn handle_catalog<R: BufRead>(catalog: Element<R>) -> TestResult {
+fn handle_catalog<R: BufRead>(catalog: &Element<R>) -> TestResult {
     // Iterate over the children of the catalog
     let mut count = 0;
     for child in catalog.children() {
-        let child = child?;
+        let child = &child?;
         // First child should be book
         assert_eq!(child.name, "book");
 
         // Should have an id attribute
-        assert!(child
-            .attributes
-            .iter()
-            .any(|attr| &attr.name == "id" && &attr.value == "bk101"));
+        assert!(
+            child
+                .attributes
+                .iter()
+                .any(|attr| &attr.name == "id" && &attr.value == "bk101")
+        );
 
         // Should only have a single child at this level
         count += 1;
@@ -62,11 +64,11 @@ fn handle_catalog<R: BufRead>(catalog: Element<R>) -> TestResult {
     Ok(())
 }
 
-fn handle_nest1<R: BufRead>(nest1: Element<R>) -> TestResult {
+fn handle_nest1<R: BufRead>(nest1: &Element<R>) -> TestResult {
     // Should have a single child called "nest2"
     let mut count = 0;
     for child in nest1.children() {
-        let child = child?;
+        let child = &child?;
         // First child should be nest2
         assert_eq!(child.name, "nest2");
 
@@ -89,7 +91,7 @@ fn test_iterate_stream() -> TestResult {
     let source = ElementSource::new(test_data.as_bytes(), None)?;
     let catalog = source.root()?.unwrap();
     assert_eq!(catalog.name, "catalog");
-    handle_catalog(catalog)?;
+    handle_catalog(&catalog)?;
 
     Ok(())
 }
@@ -152,7 +154,7 @@ fn test_rss_decoding() -> TestResult {
     Ok(())
 }
 
-fn assert_title_bases<R: BufRead>(feed: Element<R>, expected: Vec<&str>) -> TestResult {
+fn assert_title_bases<R: BufRead>(feed: &Element<R>, expected: &Vec<&str>) -> TestResult {
     // Find the actual title bases
     let mut title_bases = Vec::new();
     for entry in feed.children() {
@@ -198,8 +200,8 @@ fn test_xml_base() -> TestResult {
     );
 
     assert_title_bases(
-        feed,
-        vec![
+        &feed,
+        &vec![
             "http://1.example.com/test/",
             "http://2.example.com/test1/test2",
             "http://3.example.com/test3",
@@ -231,8 +233,8 @@ fn test_xml_base_header() -> TestResult {
     );
 
     assert_title_bases(
-        feed,
-        vec![
+        &feed,
+        &vec![
             "http://example.com/feed/",
             "http://example.com/feed2/entry/",
         ],
@@ -290,7 +292,7 @@ fn test_iso8859_decode() -> TestResult {
 
     // The nested XML (or HTML in feeds) breaks the decoding
     let nested = elements.next().unwrap()?.child_as_text().unwrap();
-    assert_eq!(nested, format!("<p>{}</p>", expected));
+    assert_eq!(nested, format!("<p>{expected}</p>"));
 
     Ok(())
 }

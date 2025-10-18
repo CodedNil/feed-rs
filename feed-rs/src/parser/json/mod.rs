@@ -1,10 +1,8 @@
-use std::io::Read;
-
-use mediatype::{MediaTypeBuf, names};
-
 use crate::model::{Category, Content, Entry, Feed, FeedType, Image, Link, Person, Text};
 use crate::parser::util::if_some_then;
 use crate::parser::{ParseFeedError, ParseFeedResult, Parser};
+use mediatype::{MediaTypeBuf, names};
+use std::io::Read;
 
 #[cfg(test)]
 mod tests;
@@ -30,7 +28,7 @@ fn convert(parser: &Parser, jf: JsonFeed) -> ParseFeedResult<Feed> {
     }
 
     // Convert feed level fields
-    feed.title = Some(Text::new(jf.title));
+    feed.title = Some(Text::new(&jf.title));
 
     if_some_then(jf.home_page_url, |uri| {
         feed.links.push(Link::new(uri, None));
@@ -39,7 +37,7 @@ fn convert(parser: &Parser, jf: JsonFeed) -> ParseFeedResult<Feed> {
     if_some_then(jf.feed_url, |uri| feed.links.push(Link::new(uri, None)));
 
     if_some_then(jf.description, |text| {
-        feed.description = Some(Text::new(text));
+        feed.description = Some(Text::new(&text));
     });
 
     if_some_then(jf.icon, |uri| feed.logo = Some(Image::new(uri)));
@@ -108,13 +106,13 @@ fn handle_authors(
 }
 
 // Handles HTML or plain text content
-fn handle_content(content: Option<String>, content_type: MediaTypeBuf) -> Option<Content> {
-    content.map(|body| Content {
-        length: Some(body.len() as u64),
+fn handle_content(body: &str, content_type: MediaTypeBuf) -> Content {
+    Content {
         body: Some(body.trim().into()),
         content_type,
+        length: Some(body.len() as u64),
         ..Default::default()
-    })
+    }
 }
 
 // Converts a JSON feed item into our model
@@ -130,22 +128,24 @@ fn handle_item(parser: &Parser, ji: JsonItem) -> Entry {
         entry.links.push(Link::new(uri, None));
     });
 
-    if_some_then(ji.title, |text| entry.title = Some(Text::new(text)));
+    if_some_then(ji.title, |text| entry.title = Some(Text::new(&text)));
 
     // Content HTML, content text and summary are mapped across to our model with the preference toward HTML and explicit summary fields
-    entry.content = handle_content(ji.content_html, MediaTypeBuf::new(names::TEXT, names::HTML));
-    entry.summary = ji.summary.map(Text::new);
-    if let Some(content_text) = handle_content(
-        ji.content_text,
-        MediaTypeBuf::new(names::TEXT, names::PLAIN),
-    ) {
+    entry.content = ji
+        .content_html
+        .map(|html| handle_content(&html, MediaTypeBuf::new(names::TEXT, names::HTML)));
+    entry.summary = ji.summary.map(|t| Text::new(&t));
+    if let Some(content_text) = ji
+        .content_text
+        .map(|html| handle_content(&html, MediaTypeBuf::new(names::TEXT, names::PLAIN)))
+    {
         // If we don't have HTML content, use the text content as the entry content
         // otherwise, if the summary was not provided, we push the text there
 
         if entry.content.is_none() {
             entry.content = Some(content_text);
         } else if entry.summary.is_none() {
-            entry.summary = content_text.body.map(Text::new);
+            entry.summary = content_text.body.map(|t| Text::new(&t));
         }
     }
 

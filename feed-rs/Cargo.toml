@@ -16,7 +16,7 @@ readme = "README.md"
 travis-ci = { repository = "feed-rs/feed-rs", branch = "master" }
 
 [dependencies]
-chrono = { version = "0.4", features = ["serde"] }
+chrono = { version = "0.4.42", default-features = false, features = ["serde"] }
 mediatype = { version = "0.20", features = ["serde"] }
 quick-xml = { version = "0.37.5", features = ["encoding"] }
 regex-lite = "0.1"
@@ -26,6 +26,20 @@ siphasher = "1.0"
 url = { version = "2.5", features = ["serde"] }
 uuid = { version = "1.18", features = ["v4"] }
 
+[lints.rust]
+mismatched_lifetime_syntaxes = "allow"
+
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }
-# nursery = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+too_many_lines = "allow"
+must_use_candidate = "allow"
+return_self_not_must_use = "allow"
+missing_panics_doc = "allow"
+unreadable_literal = "allow"
+missing_errors_doc = "allow"
+struct_field_names = "allow"
+ref_option = "allow"
+cast_possible_wrap = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"

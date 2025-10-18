@@ -14,18 +14,18 @@ fn test_example_1() {
 
     // Expected feed
     let expected = Feed::new(FeedType::Atom)
-        .title(Text::new("dive into mark".into()))
-        .description(Text::new("A <em>lot</em> of effort\n        went into making this effortless".into()).content_type("text/html"))
+        .title(Text::new("dive into mark"))
+        .description(Text::new("A <em>lot</em> of effort\n        went into making this effortless").content_type("text/html"))
         .updated_parsed("2005-07-31T12:29:29Z")
         .id("tag:example.org,2003:3")
         .link(Link::new("http://example.org/", None).rel("alternate").media_type("text/html").href_lang("en"))
         .link(Link::new("http://example.org/feed.atom", None).rel("self").media_type("application/atom+xml"))
-        .rights(Text::new("Copyright (c) 2003, Mark Pilgrim".into()))
+        .rights(Text::new("Copyright (c) 2003, Mark Pilgrim"))
         .generator(Generator::new("Example Toolkit").uri("http://www.example.com/").version("1.0"))
         .entry(
             Entry::default()
                 .id("tag:example.org,2003:3.2397")
-                .title(Text::new("Atom draft-07 snapshot".into()))
+                .title(Text::new("Atom draft-07 snapshot"))
                 .updated_parsed("2005-07-31T12:29:29Z")
                 .language("en")
                 .base("http://diveintomark.org/")
@@ -59,19 +59,19 @@ fn test_example_2() {
     let expected = Feed::new(FeedType::Atom)
         .id("tag:theregister.co.uk,2005:feed/theregister.co.uk/science/")
         .language("en")
-        .title(Text::new("The Register - Science".into()))
+        .title(Text::new("The Register - Science"))
         .link(Link::new("https://www.theregister.co.uk/science/headlines.atom", None)
             .rel("self")
             .media_type("application/atom+xml"))
         .link(Link::new("https://www.theregister.co.uk/science/", None)
             .rel("alternate")
             .media_type("text/html"))
-        .rights(Text::new("Copyright © 2019, Situation Publishing".into()))
+        .rights(Text::new("Copyright © 2019, Situation Publishing"))
         .author(Person::new("Team Register")
             .email("webmaster@theregister.co.uk")
             .uri("https://www.theregister.co.uk/odds/about/contact/"))
         .icon(Image::new("https://www.theregister.co.uk/Design/graphics/icons/favicon.png".into()))
-        .description(Text::new("Biting the hand that feeds IT — sci/tech news and views for the world".into()))
+        .description(Text::new("Biting the hand that feeds IT — sci/tech news and views for the world"))
         .logo(Image::new("https://www.theregister.co.uk/Design/graphics/Reg_default/The_Register_r.png".into()))
         .updated_parsed("2019-07-31T11:54:28Z")
         .entry(Entry::default()
@@ -82,9 +82,9 @@ fn test_example_2() {
             .link(Link::new("http://go.theregister.com/feed/www.theregister.co.uk/2019/07/31/orbitbeyond_drops_nasa_moon_contract/", None)
                 .rel("alternate")
                 .media_type("text/html"))
-            .title(Text::new("Will someone plz dump our shizz on the Moon, NASA begs as one of the space biz vendors drops out".into())
+            .title(Text::new("Will someone plz dump our shizz on the Moon, NASA begs as one of the space biz vendors drops out")
                 .content_type("text/html"))
-            .summary(Text::new("<h4>OrbitBeyond begone: Getting to the Moon is <i>hard</i></h4> <p>NASA made a slew of announcements yesterday aimed at bigging up the agency's efforts to get commercial companies involved with its deep space ambitions – despite one vendor dumping plans for a 2020 lunar landing.…</p>".into())
+            .summary(Text::new("<h4>OrbitBeyond begone: Getting to the Moon is <i>hard</i></h4> <p>NASA made a slew of announcements yesterday aimed at bigging up the agency's efforts to get commercial companies involved with its deep space ambitions – despite one vendor dumping plans for a 2020 lunar landing.…</p>")
                 .content_type("text/html")))
         .entry(Entry::default()
             .id("tag:theregister.co.uk,2005:story204131")
@@ -94,9 +94,9 @@ fn test_example_2() {
             .link(Link::new("http://go.theregister.com/feed/www.theregister.co.uk/2019/07/30/french_arming_satellites/", None)
                 .rel("alternate")
                 .media_type("text/html"))
-            .title(Text::new("Satellites with lasers and machine guns coming! China's new plans? Trump's Space Force? Nope, the French".into())
+            .title(Text::new("Satellites with lasers and machine guns coming! China's new plans? Trump's Space Force? Nope, the French")
                 .content_type("text/html"))
-            .summary(Text::new(r#"<h4>After all, what could possibly go wrong, apart from everything?</h4> <p>France is threatening to stick submachine guns on its next generation of satellites as part of an "active space defense" strategy that would enable it to shoot down other space hardware.…</p>"#.to_owned())
+            .summary(Text::new(r#"<h4>After all, what could possibly go wrong, apart from everything?</h4> <p>France is threatening to stick submachine guns on its next generation of satellites as part of an "active space defense" strategy that would enable it to shoot down other space hardware.…</p>"#)
                 .content_type("text/html")));
 
     // Check
@@ -113,7 +113,7 @@ fn test_example_3() {
     let actual = p.parse(test_data.as_bytes()).unwrap();
 
     let expected = Feed::new(FeedType::Atom)
-        .title(Text::new("The Akamai Blog".into()))
+        .title(Text::new("The Akamai Blog"))
         .link(Link::new("https://blogs.akamai.com/", None)
             .rel("alternate")
             .media_type("text/html"))
@@ -127,7 +127,7 @@ fn test_example_3() {
         .link(Link::new("http://pubsubhubbub.appspot.com/", None)
             .rel("hub"))
         .entry(Entry::default()
-            .title(Text::new("Time to Transfer Risk: Why Security Complexity & VPNs Are No Longer Sustainable".into()))
+            .title(Text::new("Time to Transfer Risk: Why Security Complexity & VPNs Are No Longer Sustainable"))
             .language("en-us")
             .base("https://blogs.akamai.com/")
             .link(Link::new("http://feedproxy.google.com/~r/TheAkamaiBlog/~3/NnQEuqRSyug/time-to-transfer-risk-why-security-complexity-vpns-are-no-longer-sustainable.html", None)
@@ -136,7 +136,7 @@ fn test_example_3() {
             .id("tag:blogs.akamai.com,2019://2.3337")
             .published("2019-07-30T16:00:00Z")
             .updated_parsed("2019-07-30T15:02:05Z")
-            .summary(Text::new("Now, there are many reasons to isolate your infrastructure from the Internet. Minimizing the number of exposed things not only reduces risk, it also reduces operational complexity. VPNs are counter to this. VPNs make it so you aren't exposing all of your applications publicly in a DMZ, which is good. But for the most part, they still provide access to the corporate network to get access to corporate apps. Definitely bad. At this point, I think we all agree that moats and castles belong in the past.".into()))
+            .summary(Text::new("Now, there are many reasons to isolate your infrastructure from the Internet. Minimizing the number of exposed things not only reduces risk, it also reduces operational complexity. VPNs are counter to this. VPNs make it so you aren't exposing all of your applications publicly in a DMZ, which is good. But for the most part, they still provide access to the corporate network to get access to corporate apps. Definitely bad. At this point, I think we all agree that moats and castles belong in the past."))
             .author(Person::new("Lorenz Jakober"))
             .category(Category::new("Zero Trust")
                 .scheme("http://www.sixapart.com/ns/types#category"))
@@ -169,16 +169,16 @@ fn test_example_4() {
         .link(Link::new("http://www.ebmpapst.com/en/ebmpapst_productnews_atom_feed.xml", None)
             .rel("self")
             .media_type("application/atom+xml"))
-        .title(Text::new("ebm-papst product news".into()))
+        .title(Text::new("ebm-papst product news"))
         .id("tag:ebmpapst.com,2011-06-30:1309426729931")
         .updated_parsed("2019-07-29T09:41:09Z")
         .entry(Entry::default()
-            .title(Text::new(" Connection with future".into()))
+            .title(Text::new(" Connection with future"))
             .link(Link::new("https://idt.ebmpapst.com/de/en/idt/campaign/simatic-micro-drive.html", None)
                 .rel("alternate"))
             .id("tag:ebmpapst.com,2019-07-17:0310161724098")
             .updated_parsed("2019-07-17T03:10:16Z")
-            .summary(Text::new(r#" <a href="https://idt.ebmpapst.com/de/en/idt/campaign/simatic-micro-drive.html"><img src="http://www.ebmpapst.com//media/content/homepage/currenttopic/ads_cd2013/FF_ep_keyvisual_100px.jpg" border="0" align="right"></a> Working in perfect harmony: the ebm-papst drive solutions for SIMATIC MICRO-DRIVE drive regulators from Siemens. "#.to_owned())
+            .summary(Text::new(r#" <a href="https://idt.ebmpapst.com/de/en/idt/campaign/simatic-micro-drive.html"><img src="http://www.ebmpapst.com//media/content/homepage/currenttopic/ads_cd2013/FF_ep_keyvisual_100px.jpg" border="0" align="right"></a> Working in perfect harmony: the ebm-papst drive solutions for SIMATIC MICRO-DRIVE drive regulators from Siemens. "#)
                 .content_type("text/html")));
 
     // Check
@@ -195,7 +195,7 @@ fn test_example_5() {
     let actual = p.parse(test_data.as_bytes()).unwrap();
 
     let expected = Feed::new(FeedType::Atom)
-        .title(Text::new("USGS Magnitude 2.5+ Earthquakes, Past Hour".into()))
+        .title(Text::new("USGS Magnitude 2.5+ Earthquakes, Past Hour"))
         .updated_parsed("2019-07-31T13:17:27Z")
         .author(Person::new("U.S. Geological Survey")
             .uri("https://earthquake.usgs.gov/"))
@@ -205,13 +205,13 @@ fn test_example_5() {
         .icon(Image::new("https://earthquake.usgs.gov/favicon.ico".into()))
         .entry(Entry::default()
             .id("urn:earthquake-usgs-gov:nc:73239366")
-            .title(Text::new("M 3.6 - 15km W of Petrolia, CA".into()))
+            .title(Text::new("M 3.6 - 15km W of Petrolia, CA"))
             .updated_parsed("2019-07-31T13:07:31.364Z")
             .link(Link::new("https://earthquake.usgs.gov/earthquakes/eventpage/nc73239366", None)
                 .rel("alternate")
                 .media_type("text/html"))
             .summary(Text::new(r#"
-            <p class="quicksummary"><a href="https://earthquake.usgs.gov/earthquakes/eventpage/nc73239366#shakemap" title="ShakeMap maximum estimated intensity" class="mmi-II">ShakeMap - <strong class="roman">II</strong></a> <a href="https://earthquake.usgs.gov/earthquakes/eventpage/nc73239366#dyfi" class="mmi-IV" title="Did You Feel It? maximum reported intensity (4 reports)">DYFI? - <strong class="roman">IV</strong></a></p><dl><dt>Time</dt><dd>2019-07-31 12:26:15 UTC</dd><dd>2019-07-31 04:26:15 -08:00 at epicenter</dd><dt>Location</dt><dd>40.347&deg;N 124.460&deg;W</dd><dt>Depth</dt><dd>29.35 km (18.24 mi)</dd></dl>"#.to_owned())
+            <p class="quicksummary"><a href="https://earthquake.usgs.gov/earthquakes/eventpage/nc73239366#shakemap" title="ShakeMap maximum estimated intensity" class="mmi-II">ShakeMap - <strong class="roman">II</strong></a> <a href="https://earthquake.usgs.gov/earthquakes/eventpage/nc73239366#dyfi" class="mmi-IV" title="Did You Feel It? maximum reported intensity (4 reports)">DYFI? - <strong class="roman">IV</strong></a></p><dl><dt>Time</dt><dd>2019-07-31 12:26:15 UTC</dd><dd>2019-07-31 04:26:15 -08:00 at epicenter</dd><dt>Location</dt><dd>40.347&deg;N 124.460&deg;W</dd><dt>Depth</dt><dd>29.35 km (18.24 mi)</dd></dl>"#)
                 .content_type("text/html"))
             .category(Category::new("Past Hour")
                 .label("Age"))
@@ -246,7 +246,7 @@ fn test_example_6() {
                 .rel("self")
                 .media_type("application/atom+xml"),
         )
-        .title(Text::new("Release notes from feed-rs".into()))
+        .title(Text::new("Release notes from feed-rs"))
         .updated_parsed("2020-01-19T16:01:56+11:00")
         .entry(
             Entry::default()
@@ -257,18 +257,18 @@ fn test_example_6() {
                         .rel("alternate")
                         .media_type("text/html"),
                 )
-                .title(Text::new("0.2.0".into()))
+                .title(Text::new("0.2.0"))
                 .content(
                     Content::default()
                         .body(
-                            r#"<p>A range of maintenance work, including:</p>
+                            r"<p>A range of maintenance work, including:</p>
             <ul>
             <li>migrate to Rust 2018 edition</li>
             <li>Align domain model around Atom spec as it is more modern+complete</li>
             <li>Switch to event-based parser (xml-rs) to reduce peak memory usage and use of clone()</li>
             <li>Expanded test coverage</li>
             <li>Documentation improvements</li>
-            </ul>"#,
+            </ul>",
                         )
                         .content_type("text/html"),
                 )
@@ -290,8 +290,8 @@ fn test_example_6() {
                         .rel("alternate")
                         .media_type("text/html"),
                 )
-                .title(Text::new("0.1.3".into()))
-                .content(Content::default().body(r#"<p>Update version to 0.1.3</p>"#).content_type("text/html"))
+                .title(Text::new("0.1.3"))
+                .content(Content::default().body(r"<p>Update version to 0.1.3</p>").content_type("text/html"))
                 .author(Person::new("kumabook"))
                 .media(
                     MediaObject::default().thumbnail(MediaThumbnail::new(
@@ -310,10 +310,10 @@ fn test_example_6() {
                         .rel("alternate")
                         .media_type("text/html"),
                 )
-                .title(Text::new("0.1.1".into()))
+                .title(Text::new("0.1.1"))
                 .content(
                     Content::default()
-                        .body(r#"<p>Handle rel attribute of link element of entry of atom</p>"#)
+                        .body(r"<p>Handle rel attribute of link element of entry of atom</p>")
                         .content_type("text/html"),
                 )
                 .author(Person::new("kumabook"))
@@ -334,8 +334,8 @@ fn test_example_6() {
                         .rel("alternate")
                         .media_type("text/html"),
                 )
-                .title(Text::new("0.1.0".into()))
-                .content(Content::default().body(r#"<p>Update crate info to Cargo.toml</p>"#).content_type("text/html"))
+                .title(Text::new("0.1.0"))
+                .content(Content::default().body(r"<p>Update crate info to Cargo.toml</p>").content_type("text/html"))
                 .author(Person::new("kumabook"))
                 .media(
                     MediaObject::default().thumbnail(MediaThumbnail::new(
@@ -391,16 +391,16 @@ fn test_spec_1() {
     // Expected feed
     let expected = Feed::new(FeedType::Atom)
         .id("urn:uuid:60a76c80-d399-11d9-b93C-0003939e0af6")
-        .title(Text::new("Example Feed".into()))
+        .title(Text::new("Example Feed"))
         .link(Link::new("http://example.org/", None).rel("alternate"))
         .updated_parsed("2003-12-13T18:30:02Z")
         .author(Person::new("John Doe"))
         .entry(
             Entry::default()
                 .id("urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a")
-                .title(Text::new("Atom-Powered Robots Run Amok".into()))
+                .title(Text::new("Atom-Powered Robots Run Amok"))
                 .updated_parsed("2003-12-13T18:30:02Z")
-                .summary(Text::new("Some text.".into()))
+                .summary(Text::new("Some text."))
                 .link(Link::new("http://example.org/2003/12/13/atom03", None).rel("alternate")),
         );
 
@@ -453,7 +453,7 @@ fn test_pub_spec_1() {
     // Expected feed
     let expected = Feed::new(FeedType::Atom).entry(
         Entry::default()
-            .title(Text::new("Atom-Powered Robots Run Amok".into()))
+            .title(Text::new("Atom-Powered Robots Run Amok"))
             .id("urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a")
             .updated_parsed("2003-12-13T18:30:02Z")
             .author(Person::new("John Doe"))
@@ -476,7 +476,7 @@ fn test_entry() {
 
     let expected = Feed::new(FeedType::Atom).entry(
         Entry::default()
-            .title(Text::new("Specifications".into()))
+            .title(Text::new("Specifications"))
             .id("urn:uuid:988EF5C55CDEA24EDE1251744888912")
             .updated_parsed("2009-08-31T18:55:12.569Z")
             .author(Person::new("S. A. Khuba"))
@@ -488,7 +488,7 @@ fn test_entry() {
                     .content_type("text/plain"),
             )
             .summary(Text::new(
-                "This Atom Entry XML Doc publishes tech specifications of Nikon D300S Digital Camera".into(),
+                "This Atom Entry XML Doc publishes tech specifications of Nikon D300S Digital Camera",
             )),
     );
 
@@ -534,7 +534,7 @@ fn test_mediarss_newscred() {
     let expected = MediaObject::default()
         .title("media title")
         .description("media description")
-        .text(MediaText::new(Text::new("media text".to_string())))
+        .text(MediaText::new(Text::new("media text")))
         .credit("media credit")
         .content(
             MediaContent::new()

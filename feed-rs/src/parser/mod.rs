@@ -1,16 +1,14 @@
+use crate::model;
+use crate::parser::util::{IdGenerator, TimestampParser};
+use crate::xml;
+use crate::xml::NS;
+use chrono::{DateTime, Utc};
+use siphasher::sip128::{Hasher128, SipHasher};
 use std::error::Error;
 use std::fmt;
 use std::fmt::Debug;
 use std::hash::Hasher;
 use std::io::{BufRead, BufReader, Read};
-
-use chrono::{DateTime, Utc};
-use siphasher::sip128::{Hasher128, SipHasher};
-
-use crate::model;
-use crate::parser::util::{IdGenerator, TimestampParser};
-use crate::xml;
-use crate::xml::NS;
 
 mod atom;
 mod json;
@@ -21,6 +19,9 @@ mod rss2;
 pub(crate) mod itunes;
 pub(crate) mod mediarss;
 pub(crate) mod util;
+
+#[cfg(test)]
+mod tests;
 
 pub type ParseFeedResult<T> = Result<T, ParseFeedError>;
 
@@ -184,7 +185,7 @@ impl Parser {
     fn parse_xml<R: BufRead>(&self, source: R) -> ParseFeedResult<model::Feed> {
         // Set up the source of XML elements from the input
         let element_source = xml::ElementSource::new(source, self.base_uri.as_deref())?;
-        if let Ok(Some(root)) = element_source.root() {
+        if let Ok(Some(root)) = &element_source.root() {
             // Dispatch to the correct parser
             let version = root.attr_value("version");
             match (root.name.as_str(), version.as_deref()) {
@@ -268,17 +269,18 @@ impl Builder {
     pub fn id_generator_v0_2(self) -> Self {
         self.id_generator(|links, title, _uri| {
             // If we have a link without relative components, use that
-            if let Some(link) = links.iter().find(|l| l.rel.is_none()) {
-                // Trim the trailing slash if it exists
-                let mut link = model::Link::new(link.href.clone(), None);
-                if link.href.ends_with('/') {
-                    link.href.pop();
-                }
+            links
+                .iter()
+                .find(|l| l.rel.is_none())
+                .map_or_else(util::uuid_gen, |link| {
+                    // Trim the trailing slash if it exists
+                    let mut link = model::Link::new(link.href.clone(), None);
+                    if link.href.ends_with('/') {
+                        link.href.pop();
+                    }
 
-                generate_id_from_link_and_title(&link, title)
-            } else {
-                util::uuid_gen()
-            }
+                    generate_id_from_link_and_title(&link, title)
+                })
         })
     }
 
@@ -329,14 +331,17 @@ pub fn generate_id(
     title: &Option<model::Text>,
     uri: Option<&str>,
 ) -> String {
-    if let Some(link) = links.first() {
-        generate_id_from_link_and_title(link, title)
-    } else if let (Some(uri), Some(title)) = (uri, title) {
-        generate_id_from_uri_and_title(uri, title)
-    } else {
-        // Generate a UUID as last resort
-        util::uuid_gen()
-    }
+    links.first().map_or_else(
+        || {
+            if let (Some(uri), Some(title)) = (uri, title) {
+                generate_id_from_uri_and_title(uri, title)
+            } else {
+                // Generate a UUID as last resort
+                util::uuid_gen()
+            }
+        },
+        |link| generate_id_from_link_and_title(link, title),
+    )
 }
 
 // Generate an ID from the link + title
@@ -360,6 +365,3 @@ pub fn generate_id_from_uri_and_title(uri: &str, title: &model::Text) -> String 
     let hash = hasher.finish128();
     format!("{:x}{:x}", hash.h1, hash.h2)
 }
-
-#[cfg(test)]
-mod tests;

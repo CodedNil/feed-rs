@@ -1,11 +1,9 @@
-use std::fs;
-use std::path::{Path, PathBuf};
-
-use uuid::Uuid;
-
 use crate::model::Feed;
 use crate::parser;
 use crate::util::test;
+use std::fs;
+use std::path::{Path, PathBuf};
+use uuid::Uuid;
 
 // Regression test for the default ID generator
 #[test]
@@ -43,7 +41,7 @@ fn serde_regression() {
         // Parse the original fixture file
         let data = fs::read(source_path).unwrap();
         let parser = parser::Builder::default().build();
-        let mut feed = parser.parse(data.as_slice()).unwrap();
+        let feed = parser.parse(data.as_slice()).unwrap();
 
         // Parse the previously serialised form
         let serde_data = fs::read(json_path).unwrap();
@@ -52,7 +50,7 @@ fn serde_regression() {
         // Basic check, and then try with replaced IDs too
         if feed != serde_feed {
             // Replace the IDs in the serialised form if UUIDs
-            replace_ids(&mut feed, &mut serde_feed);
+            replace_ids(&feed, &mut serde_feed);
 
             assert_eq!(feed, serde_feed);
         }
@@ -70,7 +68,13 @@ fn find_fixture_files(fixture_root: &PathBuf, callback: fn(&Path, &Path)) {
             } else {
                 // Process the xml + json base files
                 let path_str = source_path.to_str().unwrap();
-                if path_str.ends_with(".xml") || path_str.ends_with(".json") {
+                if Path::new(path_str)
+                    .extension()
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("xml"))
+                    || Path::new(path_str)
+                        .extension()
+                        .is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
+                {
                     // Ignore if no serde companion file
                     let json_path = source_path.with_extension("serde.json");
                     if json_path.exists() {
@@ -81,7 +85,7 @@ fn find_fixture_files(fixture_root: &PathBuf, callback: fn(&Path, &Path)) {
         });
 }
 
-fn replace_ids(expected: &mut Feed, actual: &mut Feed) {
+fn replace_ids(expected: &Feed, actual: &mut Feed) {
     if Uuid::parse_str(&expected.id).is_ok() {
         actual.id = expected.id.clone();
     }

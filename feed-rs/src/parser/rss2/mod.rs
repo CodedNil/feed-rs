@@ -1,7 +1,3 @@
-use std::io::BufRead;
-
-use mediatype::{MediaTypeBuf, names};
-
 use crate::model::{
     Category, Content, Entry, Feed, FeedType, Generator, Image, Link, MediaContent, MediaObject,
     Person,
@@ -13,30 +9,33 @@ use crate::parser::{ParseErrorKind, ParseFeedError, ParseFeedResult};
 use crate::parser::{Parser, atom};
 use crate::parser::{mediarss, util};
 use crate::xml::{Element, NS};
+use mediatype::{MediaTypeBuf, names};
+use std::io::BufRead;
 
 #[cfg(test)]
 mod tests;
 
 /// Parses an RSS 2.0 feed into our model
-pub fn parse<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedResult<Feed> {
+pub fn parse<R: BufRead>(parser: &Parser, root: &Element<R>) -> ParseFeedResult<Feed> {
     // Only expecting a channel element
-    let found_channel = root.children().find(|result| match result {
-        Ok(element) => &element.name == "channel",
-        Err(_) => true,
+    let found_channel = root.children().find(|result| {
+        result
+            .as_ref()
+            .map_or(true, |element| &element.name == "channel")
     });
     if let Some(channel) = found_channel {
-        handle_channel(parser, channel?)
+        handle_channel(parser, &channel?)
     } else {
         Err(ParseFeedError::ParseError(ParseErrorKind::NoFeedRoot))
     }
 }
 
 // Handles the <channel> element
-fn handle_channel<R: BufRead>(parser: &Parser, channel: Element<R>) -> ParseFeedResult<Feed> {
+fn handle_channel<R: BufRead>(parser: &Parser, channel: &Element<R>) -> ParseFeedResult<Feed> {
     let mut feed = Feed::new(FeedType::RSS2);
 
     for child in channel.children() {
-        let child = child?;
+        let child = &child?;
         match child.ns_and_tag() {
             (NS::RSS, "title") => feed.title = util::handle_text(child),
 
@@ -100,7 +99,7 @@ fn handle_channel<R: BufRead>(parser: &Parser, channel: Element<R>) -> ParseFeed
 }
 
 // Handles <category>
-fn handle_category<R: BufRead>(element: Element<R>) -> Option<Category> {
+fn handle_category<R: BufRead>(element: &Element<R>) -> Option<Category> {
     element.children_as_string().ok().flatten().map(|text| {
         let mut category = Category::new(&text);
         category.scheme = element.attr_value("domain");
@@ -109,7 +108,7 @@ fn handle_category<R: BufRead>(element: Element<R>) -> Option<Category> {
 }
 
 // Handles <managingEditor> and <webMaster>
-fn handle_contact<R: BufRead>(role: &str, element: Element<R>) -> Option<Person> {
+fn handle_contact<R: BufRead>(role: &str, element: &Element<R>) -> Option<Person> {
     element.child_as_text().map(|email| {
         let mut person = Person::new(role);
         person.email = Some(email);
@@ -117,11 +116,11 @@ fn handle_contact<R: BufRead>(role: &str, element: Element<R>) -> Option<Person>
     })
 }
 
-fn handle_generator<R: BufRead>(element: Element<R>) -> Option<Generator> {
+fn handle_generator<R: BufRead>(element: &Element<R>) -> Option<Generator> {
     element.child_as_text().map(|c| {
         let mut generator = Generator::new(&c);
 
-        for attr in element.attributes {
+        for attr in &element.attributes {
             let tag_name = attr.name.as_str();
             if tag_name == "uri" {
                 generator.uri = Some(attr.value.clone());
@@ -133,7 +132,7 @@ fn handle_generator<R: BufRead>(element: Element<R>) -> Option<Generator> {
 }
 
 // Handles <enclosure>
-fn handle_enclosure<R: BufRead>(element: Element<R>, media_obj: &mut MediaObject) {
+fn handle_enclosure<R: BufRead>(element: &Element<R>, media_obj: &mut MediaObject) {
     let mut content = MediaContent::new();
 
     for attr in &element.attributes {
@@ -157,11 +156,11 @@ fn handle_enclosure<R: BufRead>(element: Element<R>, media_obj: &mut MediaObject
 }
 
 // Handles <image>
-fn handle_image<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Image>> {
+fn handle_image<R: BufRead>(element: &Element<R>) -> ParseFeedResult<Option<Image>> {
     let mut image = Image::new(String::new());
 
     for child in element.children() {
-        let child = child?;
+        let child = &child?;
         match child.ns_and_tag() {
             (NS::RSS, "url") => if_some_then(child.child_as_text(), |url| image.uri = url),
 
@@ -205,7 +204,7 @@ fn handle_image<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Image
 }
 
 // Handles <content:encoded>
-fn handle_content_encoded<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Content>> {
+fn handle_content_encoded<R: BufRead>(element: &Element<R>) -> ParseFeedResult<Option<Content>> {
     let src = element
         .xml_base
         .as_ref()
@@ -237,14 +236,17 @@ fn handle_content_encoded<R: BufRead>(element: Element<R>) -> ParseFeedResult<Op
 // * "content:encoded" is mapped to the content field of an Entry
 // * MediaRSS elements without a parent group are added to a default MediaObject
 // * Itunes elements are added to the default MediaObject
-fn handle_item<R: BufRead>(parser: &Parser, element: Element<R>) -> ParseFeedResult<Option<Entry>> {
+fn handle_item<R: BufRead>(
+    parser: &Parser,
+    element: &Element<R>,
+) -> ParseFeedResult<Option<Entry>> {
     let mut entry = Entry::default();
 
     // Create a default media object e.g. MediaRSS elements that are not within a "<media:group>", enclosures etc
     let mut media_obj = MediaObject::default();
 
     for child in element.children() {
-        let child = child?;
+        let child = &child?;
         match child.ns_and_tag() {
             (NS::RSS, "title") => entry.title = util::handle_text(child),
 

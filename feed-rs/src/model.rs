@@ -611,12 +611,10 @@ pub struct Link {
 
 impl Link {
     pub(crate) fn new<S: AsRef<str>>(href: S, base: Option<&Url>) -> Self {
-        let href = match util::parse_uri(href.as_ref(), base) {
-            Some(uri) => uri.to_string(),
-            None => href.as_ref().to_string(),
-        }
-        .trim()
-        .to_string();
+        let href = util::parse_uri(href.as_ref(), base)
+            .map_or_else(|| href.as_ref().to_string(), |uri| uri.to_string())
+            .trim()
+            .to_string();
 
         Self {
             href,
@@ -708,7 +706,7 @@ impl MediaObject {
     }
 
     pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(Text::new(description.to_string()));
+        self.description = Some(Text::new(description));
         self
     }
 
@@ -728,7 +726,7 @@ impl MediaObject {
     }
 
     pub fn title(mut self, title: &str) -> Self {
-        self.title = Some(Text::new(title.to_string()));
+        self.title = Some(Text::new(title));
         self
     }
 }
@@ -963,7 +961,7 @@ pub struct Text {
 }
 
 impl Text {
-    pub(crate) fn new(content: String) -> Self {
+    pub(crate) fn new(content: &str) -> Self {
         Self {
             content_type: MediaTypeBuf::new(names::TEXT, names::PLAIN),
             src: None,
@@ -971,7 +969,7 @@ impl Text {
         }
     }
 
-    pub(crate) fn html(content: String) -> Self {
+    pub(crate) fn html(content: &str) -> Self {
         Self {
             content_type: MediaTypeBuf::new(names::TEXT, names::HTML),
             src: None,

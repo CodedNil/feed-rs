@@ -1,7 +1,3 @@
-use std::io::BufRead;
-
-use mediatype::{MediaTypeBuf, names};
-
 use crate::model::{
     Category, Content, Entry, Feed, FeedType, Generator, Image, Link, MediaObject, Person, Text,
 };
@@ -11,18 +7,20 @@ use crate::parser::util::if_some_then;
 use crate::parser::{ParseErrorKind, ParseFeedError, ParseFeedResult};
 use crate::parser::{Parser, mediarss};
 use crate::xml::{Element, NS};
+use mediatype::{MediaTypeBuf, names};
+use std::io::BufRead;
 
 #[cfg(test)]
 mod tests;
 
 /// Parses an Atom feed into our model
-pub fn parse_feed<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedResult<Feed> {
+pub fn parse_feed<R: BufRead>(parser: &Parser, root: &Element<R>) -> ParseFeedResult<Feed> {
     let mut feed = Feed::new(FeedType::Atom);
 
-    feed.language = util::handle_language_attr(&root);
+    feed.language = util::handle_language_attr(root);
 
     for child in root.children() {
-        let child = child?;
+        let child = &child?;
         match child.ns_and_tag() {
             (NS::Atom, "id") => if_some_then(child.child_as_text(), |id| feed.id = id),
 
@@ -71,7 +69,7 @@ pub fn parse_feed<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedRes
 /// Parses an Atom entry into our model
 ///
 /// Note that the entry is wrapped in an empty Feed to keep the API consistent
-pub fn parse_entry<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedResult<Feed> {
+pub fn parse_entry<R: BufRead>(parser: &Parser, root: &Element<R>) -> ParseFeedResult<Feed> {
     let mut feed = Feed::new(FeedType::Atom);
 
     if_some_then(handle_entry(parser, root)?, |entry| {
@@ -82,12 +80,12 @@ pub fn parse_entry<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedRe
 }
 
 // Handles an Atom <category>
-fn handle_category<R: BufRead>(element: Element<R>) -> Option<Category> {
+fn handle_category<R: BufRead>(element: &Element<R>) -> Option<Category> {
     // Always need a term
-    if let Some(term) = element.attr_value("term") {
+    element.attr_value("term").map(|term| {
         let mut category = Category::new(&term);
 
-        for attr in element.attributes {
+        for attr in &element.attributes {
             match attr.name.as_str() {
                 "scheme" => category.scheme = Some(attr.value.clone()),
                 "label" => category.label = Some(attr.value.clone()),
@@ -97,15 +95,12 @@ fn handle_category<R: BufRead>(element: Element<R>) -> Option<Category> {
             }
         }
 
-        Some(category)
-    } else {
-        // A missing category isn't fatal
-        None
-    }
+        category
+    })
 }
 
 // Handles an Atom <content> element
-fn handle_content<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Content>> {
+fn handle_content<R: BufRead>(element: &Element<R>) -> ParseFeedResult<Option<Content>> {
     // Extract the content type so we can parse the body
     let content_type = element.attr_value("type");
 
@@ -182,26 +177,29 @@ fn handle_content<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Con
         // Escaped text per "Otherwise, if the type attribute starts with text, then an escaped document of this type is contained inline." and
         // also handles base64 encoded document of the indicated mime type per "Otherwise, a base64 encoded document of the indicated media type is contained inline."
         Some(ct) => {
-            if let Ok(mime) = ct.parse::<MediaTypeBuf>() {
-                element
-                    .child_as_text()
-                    .map(|body| {
-                        let content = Content {
-                            body: Some(body),
-                            content_type: mime,
-                            ..Default::default()
-                        };
-                        Some(content)
-                    })
-                    // The text is required for an inline text or base64 element
-                    .ok_or(ParseFeedError::ParseError(ParseErrorKind::MissingContent(
-                        "content.inline",
+            ct.parse::<MediaTypeBuf>().map_or_else(
+                |_| {
+                    Err(ParseFeedError::ParseError(ParseErrorKind::UnknownMimeType(
+                        ct.into(),
                     )))
-            } else {
-                Err(ParseFeedError::ParseError(ParseErrorKind::UnknownMimeType(
-                    ct.into(),
-                )))
-            }
+                },
+                |mime| {
+                    element
+                        .child_as_text()
+                        .map(|body| {
+                            let content = Content {
+                                body: Some(body),
+                                content_type: mime,
+                                ..Default::default()
+                            };
+                            Some(content)
+                        })
+                        // The text is required for an inline text or base64 element
+                        .ok_or(ParseFeedError::ParseError(ParseErrorKind::MissingContent(
+                            "content.inline",
+                        )))
+                },
+            )
         }
     }
 }
@@ -209,7 +207,7 @@ fn handle_content<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Con
 // Handles an Atom <entry>
 fn handle_entry<R: BufRead>(
     parser: &Parser,
-    element: Element<R>,
+    element: &Element<R>,
 ) -> ParseFeedResult<Option<Entry>> {
     // Create a default MediaRSS content object for non-grouped elements
     let mut media_obj = MediaObject::default();
@@ -217,7 +215,7 @@ fn handle_entry<R: BufRead>(
     // Parse the entry
     let mut entry = Entry::default();
     for child in element.children() {
-        let child = child?;
+        let child = &child?;
         match child.ns_and_tag() {
             // Extract the fields from the spec
             (NS::Atom, "id") => if_some_then(child.child_as_text(), |id| entry.id = id),
@@ -233,8 +231,8 @@ fn handle_entry<R: BufRead>(
             }
 
             (NS::Atom, "content") => {
-                entry.base = util::handle_base_attr(&child);
-                entry.language = util::handle_language_attr(&child);
+                entry.base = util::handle_base_attr(child);
+                entry.language = util::handle_language_attr(child);
                 entry.content = handle_content(child)?;
             }
 
@@ -281,11 +279,11 @@ fn handle_entry<R: BufRead>(
 }
 
 // Handles an Atom <generator>
-fn handle_generator<R: BufRead>(element: Element<R>) -> Option<Generator> {
+fn handle_generator<R: BufRead>(element: &Element<R>) -> Option<Generator> {
     element.child_as_text().map(|content| {
         let mut generator = Generator::new(&content);
 
-        for attr in element.attributes {
+        for attr in &element.attributes {
             match attr.name.as_str() {
                 "uri" => generator.uri = Some(attr.value.clone()),
                 "version" => generator.version = Some(attr.value.clone()),
@@ -299,7 +297,7 @@ fn handle_generator<R: BufRead>(element: Element<R>) -> Option<Generator> {
 }
 
 // Handles an Atom <icon> or <logo>
-fn handle_image<R: BufRead>(element: Element<R>) -> Option<Image> {
+fn handle_image<R: BufRead>(element: &Element<R>) -> Option<Image> {
     element
         .child_as_text()
         .map(|raw_uri| {
@@ -311,12 +309,12 @@ fn handle_image<R: BufRead>(element: Element<R>) -> Option<Image> {
 }
 
 // Handles an Atom <link>
-pub fn handle_link<R: BufRead>(element: Element<R>) -> Option<Link> {
+pub fn handle_link<R: BufRead>(element: &Element<R>) -> Option<Link> {
     // Always need an href
     element.attr_value("href").map(|href| {
         let mut link = Link::new(href, element.xml_base.as_ref());
 
-        for attr in element.attributes {
+        for attr in &element.attributes {
             match attr.name.as_str() {
                 "rel" => link.rel = Some(attr.value.clone()),
                 "type" => link.media_type = Some(attr.value.clone()),
@@ -339,11 +337,11 @@ pub fn handle_link<R: BufRead>(element: Element<R>) -> Option<Link> {
 }
 
 // Handles an Atom <author> or <contributor>
-fn handle_person<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Person>> {
+fn handle_person<R: BufRead>(element: &Element<R>) -> ParseFeedResult<Option<Person>> {
     let mut person = Person::new("unknown");
 
     for child in element.children() {
-        let child = child?;
+        let child = &child?;
         let tag_name = child.name.as_str();
         let child_text = child.child_as_text();
         match (tag_name, child_text) {
@@ -361,7 +359,7 @@ fn handle_person<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Pers
 }
 
 // Directly handles an Atom <title>, <summary>, <rights> or <subtitle> element
-pub fn handle_text<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Text>> {
+pub fn handle_text<R: BufRead>(element: &Element<R>) -> ParseFeedResult<Option<Text>> {
     // Find type, defaulting to "text" if not present
     let type_attr = element
         .attributes
@@ -382,7 +380,7 @@ pub fn handle_text<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Te
     element
         .children_as_string()?
         .map(|content| {
-            let mut text = Text::new(content);
+            let mut text = Text::new(&content);
             text.content_type = mime;
             Some(text)
         })

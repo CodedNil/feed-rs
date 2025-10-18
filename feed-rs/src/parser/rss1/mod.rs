@@ -1,19 +1,18 @@
-use std::io::BufRead;
-
 use crate::model::{Content, Entry, Feed, FeedType, Image, Link, Person, Text};
 use crate::parser::util::if_some_then;
 use crate::parser::{ParseFeedResult, Parser, util};
 use crate::xml::{Element, NS};
+use std::io::BufRead;
 
 #[cfg(test)]
 mod tests;
 
 /// Parses an RSS 1.0 feed into our model
-pub fn parse<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedResult<Feed> {
+pub fn parse<R: BufRead>(parser: &Parser, root: &Element<R>) -> ParseFeedResult<Feed> {
     let mut feed = Feed::new(FeedType::RSS1);
 
     for child in root.children() {
-        let child = child?;
+        let child = &child?;
         match child.ns_and_tag() {
             (NS::RSS, "channel") => handle_channel(parser, &mut feed, child)?,
 
@@ -35,10 +34,10 @@ pub fn parse<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedResult<F
 fn handle_channel<R: BufRead>(
     parser: &Parser,
     feed: &mut Feed,
-    channel: Element<R>,
+    channel: &Element<R>,
 ) -> ParseFeedResult<()> {
     for child in channel.children() {
-        let child = child?;
+        let child = &child?;
         match child.ns_and_tag() {
             (NS::RSS, "title") => feed.title = util::handle_text(child),
 
@@ -67,11 +66,11 @@ fn handle_channel<R: BufRead>(
 }
 
 // Handles <image>
-fn handle_image<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Image>> {
+fn handle_image<R: BufRead>(element: &Element<R>) -> ParseFeedResult<Option<Image>> {
     let mut image = Image::new(String::new());
 
     for child in element.children() {
-        let child = child?;
+        let child = &child?;
         match child.ns_and_tag() {
             (NS::RSS, "url") => if_some_then(child.child_as_text(), |url| image.uri = url),
 
@@ -95,7 +94,10 @@ fn handle_image<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Image
 }
 
 // Handles <item>
-fn handle_item<R: BufRead>(parser: &Parser, element: Element<R>) -> ParseFeedResult<Option<Entry>> {
+fn handle_item<R: BufRead>(
+    parser: &Parser,
+    element: &Element<R>,
+) -> ParseFeedResult<Option<Entry>> {
     let mut entry = Entry::default();
 
     // Per https://www.w3.org/wiki/RssContent:
@@ -104,7 +106,7 @@ fn handle_item<R: BufRead>(parser: &Parser, element: Element<R>) -> ParseFeedRes
     let mut content_encoded: Option<Text> = None;
 
     for child in element.children() {
-        let child = child?;
+        let child = &child?;
         match child.ns_and_tag() {
             (NS::RSS, "title") => entry.title = util::handle_text(child),
 

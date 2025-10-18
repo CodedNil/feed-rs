@@ -14,11 +14,11 @@ fn test_0_91_spec_1() {
     let entry1 = actual.entries.get(1).unwrap();
     let expected = Feed::new(FeedType::RSS0)
         .id(actual.id.as_ref())     // not present in the test data
-        .title(Text::new("WriteTheWeb".into()))
+        .title(Text::new("WriteTheWeb"))
         .link(Link::new("http://writetheweb.com", None))
-        .description(Text::new("News for web users that write back".into()))
+        .description(Text::new("News for web users that write back"))
         .language("en-us")
-        .rights(Text::new("Copyright 2000, WriteTheWeb team.".into()))
+        .rights(Text::new("Copyright 2000, WriteTheWeb team."))
         .contributor(Person::new("managingEditor").email("editor@writetheweb.com"))
         .contributor(Person::new("webMaster").email("webmaster@writetheweb.com"))
         .logo(Image::new("http://writetheweb.com/images/mynetscape88.gif".into())
@@ -29,15 +29,15 @@ fn test_0_91_spec_1() {
             .description("News for web users that write back"))
         .updated(actual.updated)        // not in source data
         .entry(Entry::default()
-            .title(Text::new("Giving the world a pluggable Gnutella".into()))
+            .title(Text::new("Giving the world a pluggable Gnutella"))
             .link(Link::new("http://writetheweb.com/read.php?item=24", None))
-            .summary(Text::html("WorldOS is a framework on which to build programs that work like Freenet or Gnutella -allowing\n                distributed applications using peer-to-peer routing.\n            ".into()))
+            .summary(Text::html("WorldOS is a framework on which to build programs that work like Freenet or Gnutella -allowing\n                distributed applications using peer-to-peer routing.\n            "))
             .id(entry0.id.as_ref())     // not in source data
             .updated(entry0.updated))   // not in source data
         .entry(Entry::default()
-            .title(Text::new("Syndication discussions hot up".into()))
+            .title(Text::new("Syndication discussions hot up"))
             .link(Link::new("http://writetheweb.com/read.php?item=23", None))
-            .summary(Text::html("After a period of dormancy, the Syndication mailing list has become active again, with\n                contributions from leaders in traditional media and Web syndication.\n            ".into()))
+            .summary(Text::html("After a period of dormancy, the Syndication mailing list has become active again, with\n                contributions from leaders in traditional media and Web syndication.\n            "))
             .id(entry1.id.as_ref())     // not in source data
             .updated(entry1.updated)); // not in source data
 
@@ -119,20 +119,20 @@ fn test_0_92_spec_1() {
     let entry2 = actual.entries.get(2).unwrap();
     let expected = Feed::new(FeedType::RSS0)
         .id(actual.id.as_ref())     // not present in the test data
-        .title(Text::new("Dave Winer: Grateful Dead".into()))
+        .title(Text::new("Dave Winer: Grateful Dead"))
         .link(Link::new("http://www.scripting.com/blog/categories/gratefulDead.html", None))
-        .description(Text::new("A high-fidelity Grateful Dead song every day. This is where we're experimenting with\n            enclosures on RSS news items that download when you're not using your computer. If it works (it will)\n            it will be the end of the Click-And-Wait multimedia experience on the Internet.".into()))
+        .description(Text::new("A high-fidelity Grateful Dead song every day. This is where we're experimenting with\n            enclosures on RSS news items that download when you're not using your computer. If it works (it will)\n            it will be the end of the Click-And-Wait multimedia experience on the Internet."))
         .updated_parsed("Fri, 13 Apr 2001 19:23:02 GMT")
         .contributor(Person::new("managingEditor").email("dave@userland.com (Dave Winer)"))
         .contributor(Person::new("webMaster").email("dave@userland.com (Dave Winer)"))
         .entry(Entry::default()
-            .summary(Text::html("Kevin Drennan started a <a href=\"http://deadend.editthispage.com/\">Grateful\n                Dead Weblog</a>. Hey it's cool, he even has a <a href=\"http://deadend.editthispage.com/directory/61\">directory</a>.\n                <i>A Frontier 7 feature.</i>\n            ".into()))
+            .summary(Text::html("Kevin Drennan started a <a href=\"http://deadend.editthispage.com/\">Grateful\n                Dead Weblog</a>. Hey it's cool, he even has a <a href=\"http://deadend.editthispage.com/directory/61\">directory</a>.\n                <i>A Frontier 7 feature.</i>\n            "))
             .id(entry0.id.as_ref())     // not in source data
             .updated(entry0.updated))   // not in source data
         .entry(Entry::default()
             .summary(Text::html("<a href=\"http://arts.ucsc.edu/GDead/AGDL/other1.html\">The Other One</a>,
                 live instrumental, One From The Vault. Very rhythmic very spacy, you can listen to it many times, and
-                enjoy something new every time.\n            ".into()))
+                enjoy something new every time.\n            "))
             .id(entry1.id.as_ref())     // not in source data
             .updated(entry1.updated)   // not in source data
             .media(MediaObject::default()
@@ -141,7 +141,7 @@ fn test_0_92_spec_1() {
                     .content_type("audio/mpeg")
                     .size(6666097))))
         .entry(Entry::default()
-            .summary(Text::html("This is a test of a change I just made. Still diggin..".into()))
+            .summary(Text::html("This is a test of a change I just made. Still diggin.."))
             .id(entry2.id.as_ref())     // not in source data
             .updated(entry2.updated)); // not in source data
 
