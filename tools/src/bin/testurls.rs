@@ -13,7 +13,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let parser = parser::Builder::new().base_uri(Some(&line)).build();
         match parser.parse(xml.as_ref()) {
             Ok(_feed) => println!("ok"),
-            Err(error) => println!("failed: {:?}\n{:?}\n-------------------------------------------------------------", error, xml),
+            Err(error) => println!(
+                "failed: {:?}\n{:?}\n-------------------------------------------------------------",
+                error, xml
+            ),
         }
     }
 

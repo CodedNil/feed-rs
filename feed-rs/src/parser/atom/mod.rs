@@ -2,7 +2,9 @@ use std::io::BufRead;
 
 use mediatype::{names, MediaTypeBuf};
 
-use crate::model::{Category, Content, Entry, Feed, FeedType, Generator, Image, Link, MediaObject, Person, Text};
+use crate::model::{
+    Category, Content, Entry, Feed, FeedType, Generator, Image, Link, MediaObject, Person, Text,
+};
 use crate::parser::mediarss::handle_media_element;
 use crate::parser::util;
 use crate::parser::util::if_some_then;
@@ -26,15 +28,23 @@ pub(crate) fn parse_feed<R: BufRead>(parser: &Parser, root: Element<R>) -> Parse
 
             (NS::Atom, "title") => feed.title = handle_text(child)?,
 
-            (NS::Atom, "updated") => if_some_then(child.child_as_text(), |text| feed.updated = parser.parse_timestamp(&text)),
+            (NS::Atom, "updated") => if_some_then(child.child_as_text(), |text| {
+                feed.updated = parser.parse_timestamp(&text)
+            }),
 
-            (NS::Atom, "author") => if_some_then(handle_person(child)?, |person| feed.authors.push(person)),
+            (NS::Atom, "author") => {
+                if_some_then(handle_person(child)?, |person| feed.authors.push(person))
+            }
 
             (NS::Atom, "link") => if_some_then(handle_link(child), |link| feed.links.push(link)),
 
-            (NS::Atom, "category") => if_some_then(handle_category(child), |category| feed.categories.push(category)),
+            (NS::Atom, "category") => if_some_then(handle_category(child), |category| {
+                feed.categories.push(category)
+            }),
 
-            (NS::Atom, "contributor") => if_some_then(handle_person(child)?, |person| feed.contributors.push(person)),
+            (NS::Atom, "contributor") => if_some_then(handle_person(child)?, |person| {
+                feed.contributors.push(person)
+            }),
 
             (NS::Atom, "generator") => feed.generator = handle_generator(child),
 
@@ -46,7 +56,9 @@ pub(crate) fn parse_feed<R: BufRead>(parser: &Parser, root: Element<R>) -> Parse
 
             (NS::Atom, "subtitle") => feed.description = handle_text(child)?,
 
-            (NS::Atom, "entry") => if_some_then(handle_entry(parser, child)?, |entry| feed.entries.push(entry)),
+            (NS::Atom, "entry") => if_some_then(handle_entry(parser, child)?, |entry| {
+                feed.entries.push(entry)
+            }),
 
             // Nothing required for unknown elements
             _ => {}
@@ -74,7 +86,9 @@ pub(crate) fn parse_feed<R: BufRead>(parser: &Parser, root: Element<R>) -> Parse
 pub(crate) fn parse_entry<R: BufRead>(parser: &Parser, root: Element<R>) -> ParseFeedResult<Feed> {
     let mut feed = Feed::new(FeedType::Atom);
 
-    if_some_then(handle_entry(parser, root)?, |entry| feed.entries.push(entry));
+    if_some_then(handle_entry(parser, root)?, |entry| {
+        feed.entries.push(entry)
+    });
 
     Ok(feed)
 }
@@ -110,9 +124,9 @@ fn handle_content<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Con
     if let Some(src) = element.attr_value("src") {
         // > If the "src" attribute is present, the "type" attribute SHOULD be provided and MUST be a MIME media type, rather than "text", "html", or "xhtml".
         let mime = match &content_type {
-            Some(ct) => ct
-                .parse::<MediaTypeBuf>()
-                .map_err(|_| ParseFeedError::ParseError(ParseErrorKind::UnknownMimeType(ct.into())))?,
+            Some(ct) => ct.parse::<MediaTypeBuf>().map_err(|_| {
+                ParseFeedError::ParseError(ParseErrorKind::UnknownMimeType(ct.into()))
+            })?,
             None => {
                 // According to the spec the content type only SHOULD be provided.
                 // Unfortunately `Content` has media type as required. So we treat a missing type as text/html as that is probably the most common. Not to mention that `body` will be `None` so we are just providing a content type for nothing.
@@ -123,7 +137,9 @@ fn handle_content<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Con
         if element.child_as_text().is_some() {
             // > If the "src" attribute is present, atom:content MUST be empty.
             // `ParseFeedError` has no appropriate error type, so use `MissingContent` which is what would have been returned before support for `src` was added.
-            return Err(ParseFeedError::ParseError(ParseErrorKind::MissingContent("non-empty atom:content with src")));
+            return Err(ParseFeedError::ParseError(ParseErrorKind::MissingContent(
+                "non-empty atom:content with src",
+            )));
         }
 
         let content = Content {
@@ -155,7 +171,9 @@ fn handle_content<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Con
                     Some(content)
                 })
                 // The text is required for a text or HTML element
-                .ok_or(ParseFeedError::ParseError(ParseErrorKind::MissingContent("content.text")))
+                .ok_or(ParseFeedError::ParseError(ParseErrorKind::MissingContent(
+                    "content.text",
+                )))
         }
 
         // XML per "Otherwise, if the type attribute ends in +xml or /xml, then an xml document of this type is contained inline."
@@ -168,7 +186,9 @@ fn handle_content<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Con
                     Some(content)
                 })
                 // The XML is required for an XML content element
-                .ok_or(ParseFeedError::ParseError(ParseErrorKind::MissingContent("content.xml")))
+                .ok_or(ParseFeedError::ParseError(ParseErrorKind::MissingContent(
+                    "content.xml",
+                )))
         }
 
         // Escaped text per "Otherwise, if the type attribute starts with text, then an escaped document of this type is contained inline." and
@@ -186,16 +206,23 @@ fn handle_content<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Con
                         Some(content)
                     })
                     // The text is required for an inline text or base64 element
-                    .ok_or(ParseFeedError::ParseError(ParseErrorKind::MissingContent("content.inline")))
+                    .ok_or(ParseFeedError::ParseError(ParseErrorKind::MissingContent(
+                        "content.inline",
+                    )))
             } else {
-                Err(ParseFeedError::ParseError(ParseErrorKind::UnknownMimeType(ct.into())))
+                Err(ParseFeedError::ParseError(ParseErrorKind::UnknownMimeType(
+                    ct.into(),
+                )))
             }
         }
     }
 }
 
 // Handles an Atom <entry>
-fn handle_entry<R: BufRead>(parser: &Parser, element: Element<R>) -> ParseFeedResult<Option<Entry>> {
+fn handle_entry<R: BufRead>(
+    parser: &Parser,
+    element: Element<R>,
+) -> ParseFeedResult<Option<Entry>> {
     // Create a default MediaRSS content object for non-grouped elements
     let mut media_obj = MediaObject::default();
 
@@ -209,9 +236,13 @@ fn handle_entry<R: BufRead>(parser: &Parser, element: Element<R>) -> ParseFeedRe
 
             (NS::Atom, "title") => entry.title = handle_text(child)?,
 
-            (NS::Atom, "updated") => if_some_then(child.child_as_text(), |text| entry.updated = parser.parse_timestamp(&text)),
+            (NS::Atom, "updated") => if_some_then(child.child_as_text(), |text| {
+                entry.updated = parser.parse_timestamp(&text)
+            }),
 
-            (NS::Atom, "author") => if_some_then(handle_person(child)?, |person| entry.authors.push(person)),
+            (NS::Atom, "author") => {
+                if_some_then(handle_person(child)?, |person| entry.authors.push(person))
+            }
 
             (NS::Atom, "content") => {
                 entry.base = util::handle_base_attr(&child);
@@ -223,17 +254,27 @@ fn handle_entry<R: BufRead>(parser: &Parser, element: Element<R>) -> ParseFeedRe
 
             (NS::Atom, "summary") => entry.summary = handle_text(child)?,
 
-            (NS::Atom, "category") => if_some_then(handle_category(child), |category| entry.categories.push(category)),
+            (NS::Atom, "category") => if_some_then(handle_category(child), |category| {
+                entry.categories.push(category)
+            }),
 
-            (NS::Atom, "contributor") => if_some_then(handle_person(child)?, |person| entry.contributors.push(person)),
+            (NS::Atom, "contributor") => if_some_then(handle_person(child)?, |person| {
+                entry.contributors.push(person)
+            }),
 
             // Some feeds have "pubDate" instead of "published"
-            (NS::Atom, "published") | (NS::Atom, "pubDate") => if_some_then(child.child_as_text(), |text| entry.published = parser.parse_timestamp(&text)),
+            (NS::Atom, "published") | (NS::Atom, "pubDate") => {
+                if_some_then(child.child_as_text(), |text| {
+                    entry.published = parser.parse_timestamp(&text)
+                })
+            }
 
             (NS::Atom, "rights") => entry.rights = handle_text(child)?,
 
             // MediaRSS group creates a new object for this group of elements
-            (NS::MediaRSS, "group") => if_some_then(mediarss::handle_media_group(child)?, |obj| entry.media.push(obj)),
+            (NS::MediaRSS, "group") => if_some_then(mediarss::handle_media_group(child)?, |obj| {
+                entry.media.push(obj)
+            }),
 
             // MediaRSS tags that are not grouped are parsed into the default object
             (NS::MediaRSS, _) => handle_media_element(child, &mut media_obj)?,
@@ -349,14 +390,20 @@ fn handle_person<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Pers
 // Directly handles an Atom <title>, <summary>, <rights> or <subtitle> element
 pub(crate) fn handle_text<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Text>> {
     // Find type, defaulting to "text" if not present
-    let type_attr = element.attributes.iter().find(|a| &a.name == "type").map_or("text", |a| a.value.as_str());
+    let type_attr = element
+        .attributes
+        .iter()
+        .find(|a| &a.name == "type")
+        .map_or("text", |a| a.value.as_str());
 
     let mime = match type_attr {
         "text" => Ok(MediaTypeBuf::new(names::TEXT, names::PLAIN)),
         "html" | "xhtml" | "text/html" => Ok(MediaTypeBuf::new(names::TEXT, names::HTML)),
 
         // Unknown content type
-        _ => Err(ParseFeedError::ParseError(ParseErrorKind::UnknownMimeType(type_attr.into()))),
+        _ => Err(ParseFeedError::ParseError(ParseErrorKind::UnknownMimeType(
+            type_attr.into(),
+        ))),
     }?;
 
     element
@@ -367,5 +414,7 @@ pub(crate) fn handle_text<R: BufRead>(element: Element<R>) -> ParseFeedResult<Op
             Some(text)
         })
         // Need the text for a text element
-        .ok_or(ParseFeedError::ParseError(ParseErrorKind::MissingContent("text")))
+        .ok_or(ParseFeedError::ParseError(ParseErrorKind::MissingContent(
+            "text",
+        )))
 }

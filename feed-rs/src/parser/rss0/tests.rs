@@ -50,7 +50,10 @@ fn test_0_91_spec_1() {
 fn test_0_91_encoding_1() {
     let test_data = test::fixture_as_raw("rss0/rss_0.91_encoding_1.xml");
     let feed = parser::parse(test_data.as_slice()).unwrap();
-    assert_eq!(feed.description.unwrap().content, "Dicas-L: Informações Úteis para Administradores de Sistemas");
+    assert_eq!(
+        feed.description.unwrap().content,
+        "Dicas-L: Informações Úteis para Administradores de Sistemas"
+    );
 }
 
 // Verifies that we can handle non-UTF8 streams
@@ -58,9 +61,22 @@ fn test_0_91_encoding_1() {
 fn test_0_91_encoding_2() {
     let test_data = test::fixture_as_raw("rss0/rss_0.91_encoding_2.xml");
     let feed = parser::parse(test_data.as_slice()).unwrap();
-    assert_eq!(feed.title.unwrap().content, "Tribunal de Justiça do Estado do Rio Grande do Sul");
-    assert!(feed.entries[0].title.as_ref().unwrap().content.contains("atuação"));
-    assert!(feed.entries[0].summary.as_ref().unwrap().content.contains("prevenção"));
+    assert_eq!(
+        feed.title.unwrap().content,
+        "Tribunal de Justiça do Estado do Rio Grande do Sul"
+    );
+    assert!(feed.entries[0]
+        .title
+        .as_ref()
+        .unwrap()
+        .content
+        .contains("atuação"));
+    assert!(feed.entries[0]
+        .summary
+        .as_ref()
+        .unwrap()
+        .content
+        .contains("prevenção"));
 }
 
 // Verifies that we can handle feeds without IDs and links
@@ -73,7 +89,10 @@ fn test_0_91_missing_id() {
         .parse(test_data.as_slice())
         .unwrap();
     assert_eq!(feed.id, "f17ff7bbd6c6bd74733bbf47cb8592d5");
-    assert_eq!(feed.title.unwrap().content, "Servicio de Personal - Ingreso - Diputación de valencia");
+    assert_eq!(
+        feed.title.unwrap().content,
+        "Servicio de Personal - Ingreso - Diputación de valencia"
+    );
     assert_eq!(feed.entries[0].id, "a30a565dde9ff8cb7063e0e8ad5db62");
     assert_eq!(
         feed.entries[0].title.as_ref().unwrap().content,

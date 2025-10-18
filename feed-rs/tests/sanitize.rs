@@ -109,7 +109,10 @@ fn test_sanitize_atom() {
     let entry_summary = entry.summary.unwrap();
     let entry_content = entry.content.unwrap();
 
-    assert_eq!(feed_title.content, r#"<img src="http://www.ragingplatypus.com/i/cam-full.jpg">"#);
+    assert_eq!(
+        feed_title.content,
+        r#"<img src="http://www.ragingplatypus.com/i/cam-full.jpg">"#
+    );
     assert_eq!(feed_title.content_type.as_str(), "text/html");
     assert_eq!(feed_description.content, r#"<div>Safe subtitle</div>"#);
     assert_eq!(feed_description.content_type.as_str(), "text/html");
@@ -117,11 +120,17 @@ fn test_sanitize_atom() {
     assert_eq!(feed_description.content_type.as_str(), "text/html");
 
     // noopener/noreferrer inserted by ammonia
-    assert_eq!(entry_title.content, r#"<a href="http://example.com" rel="noopener noreferrer">Safe title</a>"#);
+    assert_eq!(
+        entry_title.content,
+        r#"<a href="http://example.com" rel="noopener noreferrer">Safe title</a>"#
+    );
     assert_eq!(entry_title.content_type.as_str(), "text/html");
     assert_eq!(entry_summary.content, "Safe summary.");
     assert_eq!(entry_summary.content_type.as_str(), "text/html");
-    assert_eq!(entry_content.body.unwrap(), "<p>Sphinx of black quartz, hear my vow!</p>");
+    assert_eq!(
+        entry_content.body.unwrap(),
+        "<p>Sphinx of black quartz, hear my vow!</p>"
+    );
     assert_eq!(entry_content.content_type.as_str(), "text/html");
 }
 
@@ -157,7 +166,10 @@ fn test_sanitize_rss2() {
         r#"2 > 1 <img src="http://www.ragingplatypus.com/i/cam-full.jpg" onkeydown="location.href='http://www.ragingplatypus.com/';" />"#
     );
     assert_eq!(feed_title.content_type.as_str(), "text/plain");
-    assert_eq!(entry_title.content, r#"Safe<iframe src="http://www.example.com/"></iframe> title"#);
+    assert_eq!(
+        entry_title.content,
+        r#"Safe<iframe src="http://www.example.com/"></iframe> title"#
+    );
     assert_eq!(entry_title.content_type.as_str(), "text/plain");
 
     assert_eq!(entry_summary.content, r#"safe summary"#);
@@ -209,7 +221,10 @@ fn test_sanitize_rss1() {
     assert_eq!(entry_summary.content, "<example description>");
     assert_eq!(entry_summary.content_type.as_str(), "text/plain");
 
-    assert_eq!(entry_content.body.unwrap(), "<p>Sphinx of black quartz, hear my vow!</p>");
+    assert_eq!(
+        entry_content.body.unwrap(),
+        "<p>Sphinx of black quartz, hear my vow!</p>"
+    );
     assert_eq!(entry_content.content_type.as_str(), "text/html");
 }
 

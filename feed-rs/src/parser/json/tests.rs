@@ -110,7 +110,10 @@ fn test_elastic_v1_1() {
     assert_eq!("en-US", actual.language.unwrap());
 
     // Check feed authors (should combine both deprecated and new fields)
-    assert_eq!(actual.authors, vec!(Person::new("Fake Author 3"), Person::new("Fake Author 4")));
+    assert_eq!(
+        actual.authors,
+        vec!(Person::new("Fake Author 3"), Person::new("Fake Author 4"))
+    );
 
     // Check first item - combine author + authors
     let mut entries = actual.entries.iter();
@@ -120,7 +123,14 @@ fn test_elastic_v1_1() {
         uri: Some("https://www.influxdata.com/blog/author/chrisc/".to_string()),
         email: None,
     };
-    assert_eq!(entry.authors, vec!(Person::new("Fake Author 2"), chris.clone(), Person::new("Fake Author 1")));
+    assert_eq!(
+        entry.authors,
+        vec!(
+            Person::new("Fake Author 2"),
+            chris.clone(),
+            Person::new("Fake Author 1")
+        )
+    );
 
     // Second item migrates from old author to new authors field
     let entry = entries.next().unwrap();
@@ -128,5 +138,8 @@ fn test_elastic_v1_1() {
 
     // Third item inherits feed authors (per the spec)
     let entry = entries.next().unwrap();
-    assert_eq!(entry.authors, vec!(Person::new("Fake Author 3"), Person::new("Fake Author 4")));
+    assert_eq!(
+        entry.authors,
+        vec!(Person::new("Fake Author 3"), Person::new("Fake Author 4"))
+    );
 }

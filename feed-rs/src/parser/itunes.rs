@@ -1,14 +1,19 @@
 use std::io::BufRead;
 use std::time::Duration;
 
-use crate::model::{Category, Feed, Image, MediaCredit, MediaObject, MediaRating, MediaThumbnail, Person};
+use crate::model::{
+    Category, Feed, Image, MediaCredit, MediaObject, MediaRating, MediaThumbnail, Person,
+};
 use crate::parser::atom;
 use crate::parser::util::{if_some_then, parse_npt};
 use crate::parser::ParseFeedResult;
 use crate::xml::{Element, NS};
 
 // Process <itunes> elements at channel level updating the Feed object as required
-pub(crate) fn handle_itunes_channel_element<R: BufRead>(element: Element<R>, feed: &mut Feed) -> ParseFeedResult<()> {
+pub(crate) fn handle_itunes_channel_element<R: BufRead>(
+    element: Element<R>,
+    feed: &mut Feed,
+) -> ParseFeedResult<()> {
     match element.ns_and_tag() {
         (NS::Itunes, "image") => if_some_then(handle_image(element), |image| {
             // Assign to feed logo if not already set
@@ -17,7 +22,9 @@ pub(crate) fn handle_itunes_channel_element<R: BufRead>(element: Element<R>, fee
             }
         }),
 
-        (NS::Itunes, "category") => if_some_then(handle_category(element)?, |category| feed.categories.push(category)),
+        (NS::Itunes, "category") => if_some_then(handle_category(element)?, |category| {
+            feed.categories.push(category)
+        }),
 
         (NS::Itunes, "explicit") => if_some_then(handle_explicit(element), |rating| {
             // Assign if not already set from media
@@ -26,8 +33,12 @@ pub(crate) fn handle_itunes_channel_element<R: BufRead>(element: Element<R>, fee
             }
         }),
 
-        (NS::Itunes, "author") => if_some_then(element.child_as_text(), |person| feed.authors.push(Person::new(&person))),
-        (NS::Itunes, "owner") => if_some_then(handle_owner(element)?, |owner| feed.contributors.push(owner)),
+        (NS::Itunes, "author") => if_some_then(element.child_as_text(), |person| {
+            feed.authors.push(Person::new(&person))
+        }),
+        (NS::Itunes, "owner") => if_some_then(handle_owner(element)?, |owner| {
+            feed.contributors.push(owner)
+        }),
 
         // Nothing required for unknown elements
         _ => {}
@@ -37,15 +48,24 @@ pub(crate) fn handle_itunes_channel_element<R: BufRead>(element: Element<R>, fee
 }
 
 // Process <itunes> elements at item level and turn them into something that looks like MediaRSS objects.
-pub(crate) fn handle_itunes_item_element<R: BufRead>(element: Element<R>, media_obj: &mut MediaObject) -> ParseFeedResult<()> {
+pub(crate) fn handle_itunes_item_element<R: BufRead>(
+    element: Element<R>,
+    media_obj: &mut MediaObject,
+) -> ParseFeedResult<()> {
     match element.ns_and_tag() {
         (NS::Itunes, "title") => media_obj.title = atom::handle_text(element)?,
 
-        (NS::Itunes, "image") => if_some_then(handle_image(element), |thumbnail| media_obj.thumbnails.push(thumbnail)),
+        (NS::Itunes, "image") => if_some_then(handle_image(element), |thumbnail| {
+            media_obj.thumbnails.push(thumbnail)
+        }),
 
-        (NS::Itunes, "duration") => if_some_then(handle_duration(element), |duration| media_obj.duration = Some(duration)),
+        (NS::Itunes, "duration") => if_some_then(handle_duration(element), |duration| {
+            media_obj.duration = Some(duration)
+        }),
 
-        (NS::Itunes, "author") => if_some_then(handle_author(element), |credit| media_obj.credits.push(credit)),
+        (NS::Itunes, "author") => if_some_then(handle_author(element), |credit| {
+            media_obj.credits.push(credit)
+        }),
 
         (NS::Itunes, "summary") => media_obj.description = atom::handle_text(element)?,
 
@@ -98,7 +118,9 @@ fn handle_explicit<R: BufRead>(element: Element<R>) -> Option<MediaRating> {
 
 // Handles <itunes:image>
 fn handle_image<R: BufRead>(element: Element<R>) -> Option<MediaThumbnail> {
-    element.attr_value("href").map(|url| MediaThumbnail::new(Image::new(url)))
+    element
+        .attr_value("href")
+        .map(|url| MediaThumbnail::new(Image::new(url)))
 }
 
 // Handles <itunes:owner>

@@ -721,7 +721,11 @@ pub struct MediaObject {
 impl MediaObject {
     // Checks if this object has been populated with content
     pub(crate) fn has_content(&self) -> bool {
-        self.title.is_some() || self.description.is_some() || !self.content.is_empty() || !self.thumbnails.is_empty() || !self.texts.is_empty()
+        self.title.is_some()
+            || self.description.is_some()
+            || !self.content.is_empty()
+            || !self.thumbnails.is_empty()
+            || !self.texts.is_empty()
     }
 }
 
@@ -901,7 +905,10 @@ pub struct MediaRating {
 
 impl MediaRating {
     pub(crate) fn new(value: String) -> MediaRating {
-        MediaRating { urn: "simple".into(), value }
+        MediaRating {
+            urn: "simple".into(),
+            value,
+        }
     }
 
     pub fn urn(mut self, urn: &str) -> Self {

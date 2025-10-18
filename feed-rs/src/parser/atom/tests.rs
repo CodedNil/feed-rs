@@ -1,5 +1,6 @@
 use crate::model::{
-    Category, Content, Entry, Feed, FeedType, Generator, Image, Link, MediaCommunity, MediaContent, MediaObject, MediaText, MediaThumbnail, Person, Text,
+    Category, Content, Entry, Feed, FeedType, Generator, Image, Link, MediaCommunity, MediaContent,
+    MediaObject, MediaText, MediaThumbnail, Person, Text,
 };
 use crate::parser;
 use crate::util::test;
@@ -435,7 +436,10 @@ fn test_relative_example() {
         .iter()
         .find(|l| l.rel.as_deref() == Some("alternate"))
         .expect("entry has an alternate link");
-    assert_eq!("https://example.com/blog/2003/12/13/atom03", alternate_link.href);
+    assert_eq!(
+        "https://example.com/blog/2003/12/13/atom03",
+        alternate_link.href
+    );
 }
 
 // Verify we can parse Atom content elements without a type attribute
@@ -453,7 +457,11 @@ fn test_pub_spec_1() {
             .id("urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a")
             .updated_parsed("2003-12-13T18:30:02Z")
             .author(Person::new("John Doe"))
-            .content(Content::default().content_type("text/plain").body("Some text.")),
+            .content(
+                Content::default()
+                    .content_type("text/plain")
+                    .body("Some text."),
+            ),
     );
 
     // Check
@@ -553,7 +561,8 @@ fn test_reddit() {
     let actual = parser::parse(test_data.as_bytes()).unwrap().id("");
 
     let expected = MediaObject::default().thumbnail(MediaThumbnail::new(Image::new(
-        "https://b.thumbs.redditmedia.com/_MXt-0n8VXQc-EQ7Q0vFioALFWFITAgVWu4Wf8dThhU.jpg".to_string(),
+        "https://b.thumbs.redditmedia.com/_MXt-0n8VXQc-EQ7Q0vFioALFWFITAgVWu4Wf8dThhU.jpg"
+            .to_string(),
     )));
 
     let entry = &actual.entries[actual.entries.len() - 2];
@@ -605,5 +614,9 @@ fn test_atom_content_src() {
 fn test_atom_content_xml_base() {
     let test_data = test::fixture_as_string("atom/atom_xml_base.xml");
     let actual = parser::parse(test_data.as_bytes()).unwrap();
-    assert!(actual.entries[0].base.as_ref().unwrap().eq("https://numi.st/post/2022/travel-uke/"));
+    assert!(actual.entries[0]
+        .base
+        .as_ref()
+        .unwrap()
+        .eq("https://numi.st/post/2022/travel-uke/"));
 }

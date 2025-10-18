@@ -24,15 +24,18 @@ fn main() {
 }
 
 fn find_fixture_files(fixture_root: &PathBuf, callback: fn(&DirEntry)) {
-    fs::read_dir(fixture_root).unwrap().map(|entry| entry.unwrap()).for_each(|entry| {
-        let path = entry.path();
-        if path.is_dir() {
-            find_fixture_files(&path, callback);
-        } else {
-            // Ignore any files ending in our serialisation test extension
-            if !entry.path().ends_with(".serde.json") {
-                callback(&entry);
+    fs::read_dir(fixture_root)
+        .unwrap()
+        .map(|entry| entry.unwrap())
+        .for_each(|entry| {
+            let path = entry.path();
+            if path.is_dir() {
+                find_fixture_files(&path, callback);
+            } else {
+                // Ignore any files ending in our serialisation test extension
+                if !entry.path().ends_with(".serde.json") {
+                    callback(&entry);
+                }
             }
-        }
-    });
+        });
 }

@@ -11,6 +11,10 @@ fn test_feed_ids_v0_2() {
     let test_data = fs::read(test_file).unwrap();
 
     // Use the v0.2 ID generator
-    let feed = parser::Builder::new().id_generator_v0_2().build().parse(test_data.as_slice()).unwrap();
+    let feed = parser::Builder::new()
+        .id_generator_v0_2()
+        .build()
+        .parse(test_data.as_slice())
+        .unwrap();
     assert_eq!("7edcf1fbe86570753646f6eb75db4d55", feed.id);
 }

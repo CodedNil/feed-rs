@@ -46,7 +46,10 @@ fn handle_catalog<R: BufRead>(catalog: Element<R>) -> TestResult {
         assert_eq!(child.name, "book");
 
         // Should have an id attribute
-        assert!(child.attributes.iter().any(|attr| &attr.name == "id" && &attr.value == "bk101"));
+        assert!(child
+            .attributes
+            .iter()
+            .any(|attr| &attr.name == "id" && &attr.value == "bk101"));
 
         // Should only have a single child at this level
         count += 1;
@@ -123,12 +126,21 @@ fn test_children_as_string() -> TestResult {
 fn test_rss_decoding() -> TestResult {
     let tests = vec![
         ("<title>AT&#x26;T</title>", "AT&T"),
-        ("<title>Bill &#x26; Ted's Excellent Adventure</title>", "Bill & Ted's Excellent Adventure"),
+        (
+            "<title>Bill &#x26; Ted's Excellent Adventure</title>",
+            "Bill & Ted's Excellent Adventure",
+        ),
         ("<title>The &#x26;amp; entity</title>", "The &amp; entity"),
-        ("<title>I &#x3C;3 Phil Ringnalda</title>", "I <3 Phil Ringnalda"),
+        (
+            "<title>I &#x3C;3 Phil Ringnalda</title>",
+            "I <3 Phil Ringnalda",
+        ),
         ("<title>A &#x3C; B</title>", "A < B"),
         ("<title>A&#x3C;B</title>", "A<B"),
-        ("<title>Nice &#x3C;gorilla&#x3E;, what's he weigh?</title>", "Nice <gorilla>, what's he weigh?"),
+        (
+            "<title>Nice &#x3C;gorilla&#x3E;, what's he weigh?</title>",
+            "Nice <gorilla>, what's he weigh?",
+        ),
     ];
     for (xml, expected) in tests {
         let source = ElementSource::new(xml.as_bytes(), None)?;
@@ -152,7 +164,10 @@ fn assert_title_bases<R: BufRead>(feed: Element<R>, expected: Vec<&str>) -> Test
     }
 
     // Verify the are as we expect
-    let expected = expected.iter().map(|uri| Url::parse(uri).unwrap()).collect::<Vec<Url>>();
+    let expected = expected
+        .iter()
+        .map(|uri| Url::parse(uri).unwrap())
+        .collect::<Vec<Url>>();
     assert_eq!(expected, title_bases);
 
     Ok(())
@@ -177,11 +192,18 @@ fn test_xml_base() -> TestResult {
 
     let source = ElementSource::new(xml.as_bytes(), None)?;
     let feed = source.root()?.unwrap();
-    assert_eq!(&Url::parse("http://1.example.com/")?, feed.xml_base.as_ref().unwrap());
+    assert_eq!(
+        &Url::parse("http://1.example.com/")?,
+        feed.xml_base.as_ref().unwrap()
+    );
 
     assert_title_bases(
         feed,
-        vec!["http://1.example.com/test/", "http://2.example.com/test1/test2", "http://3.example.com/test3"],
+        vec![
+            "http://1.example.com/test/",
+            "http://2.example.com/test1/test2",
+            "http://3.example.com/test3",
+        ],
     )?;
 
     Ok(())
@@ -203,9 +225,18 @@ fn test_xml_base_header() -> TestResult {
 
     let source = ElementSource::new(xml.as_bytes(), Some("http://example.com"))?;
     let feed = source.root()?.unwrap();
-    assert_eq!(&Url::parse("http://example.com/feed/base/")?, feed.xml_base.as_ref().unwrap());
+    assert_eq!(
+        &Url::parse("http://example.com/feed/base/")?,
+        feed.xml_base.as_ref().unwrap()
+    );
 
-    assert_title_bases(feed, vec!["http://example.com/feed/", "http://example.com/feed2/entry/"])?;
+    assert_title_bases(
+        feed,
+        vec![
+            "http://example.com/feed/",
+            "http://example.com/feed2/entry/",
+        ],
+    )?;
 
     Ok(())
 }
@@ -225,7 +256,10 @@ fn test_xml_unescape_attrib() -> TestResult {
     let root = source.root()?.unwrap();
     let link = root.children().next().unwrap()?;
     let href = link.attributes.iter().find(|a| a.name == "href").unwrap();
-    assert_eq!(href.value, "https://www.reddit.com/search.rss?q=site%3Akevincox.ca&restrict_sr=&sort=new&t=all");
+    assert_eq!(
+        href.value,
+        "https://www.reddit.com/search.rss?q=site%3Akevincox.ca&restrict_sr=&sort=new&t=all"
+    );
 
     Ok(())
 }
@@ -241,7 +275,10 @@ fn test_iso8859_decode() -> TestResult {
     let mut elements = item.children();
 
     let title = elements.next().unwrap()?.child_as_text().unwrap();
-    assert_eq!(title, "Digitalministerium: Neue Glasfaserförderung mit Schnellkasse");
+    assert_eq!(
+        title,
+        "Digitalministerium: Neue Glasfaserförderung mit Schnellkasse"
+    );
 
     let expected = "Ab April soll es wieder Förderung für den Ausbau von Glasfaser geben.";
 

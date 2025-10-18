@@ -3,7 +3,10 @@ use std::time::Duration;
 
 use mediatype::{names, MediaTypeBuf};
 
-use crate::model::{Image, MediaCommunity, MediaContent, MediaCredit, MediaObject, MediaRating, MediaText, MediaThumbnail, Text};
+use crate::model::{
+    Image, MediaCommunity, MediaContent, MediaCredit, MediaObject, MediaRating, MediaText,
+    MediaThumbnail, Text,
+};
 use crate::parser::util::{if_ok_then_some, if_some_then, parse_npt};
 use crate::parser::{util, ParseErrorKind, ParseFeedError, ParseFeedResult};
 use crate::xml::{Element, NS};
@@ -12,7 +15,9 @@ use crate::xml::{Element, NS};
 // TODO Duplicated elements appearing at deeper levels of the document tree have higher priority over other levels. For example, <media:content> level elements are favored over <item> level elements. The priority level is listed from strongest to weakest: <media:content>, <media:group>, <item>, <channel>.
 
 /// Handles the top-level "media:group", a collection of mediarss elements.
-pub(crate) fn handle_media_group<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<MediaObject>> {
+pub(crate) fn handle_media_group<R: BufRead>(
+    element: Element<R>,
+) -> ParseFeedResult<Option<MediaObject>> {
     let mut media_obj = MediaObject::default();
 
     for child in element.children() {
@@ -28,7 +33,10 @@ pub(crate) fn handle_media_group<R: BufRead>(element: Element<R>) -> ParseFeedRe
 /// Process the mediarss element into the supplied media object
 /// This isn't the typical pattern, but MediaRSS has a strange shape (content within group, with other elements as peers...or no group and some elements as children)
 /// So this signature is used to parse into a media object from a group, or a default one created at the entry level
-pub(crate) fn handle_media_element<R: BufRead>(element: Element<R>, media_obj: &mut MediaObject) -> ParseFeedResult<()> {
+pub(crate) fn handle_media_element<R: BufRead>(
+    element: Element<R>,
+    media_obj: &mut MediaObject,
+) -> ParseFeedResult<()> {
     // Top level elements that should be propagated down to content items
     let mut rating = None;
 
@@ -37,15 +45,21 @@ pub(crate) fn handle_media_element<R: BufRead>(element: Element<R>, media_obj: &
 
         (NS::MediaRSS, "content") => handle_media_content(element, media_obj)?,
 
-        (NS::MediaRSS, "thumbnail") => if_some_then(handle_media_thumbnail(element), |thumbnail| media_obj.thumbnails.push(thumbnail)),
+        (NS::MediaRSS, "thumbnail") => if_some_then(handle_media_thumbnail(element), |thumbnail| {
+            media_obj.thumbnails.push(thumbnail)
+        }),
 
         (NS::MediaRSS, "description") => media_obj.description = handle_text(element)?,
 
         (NS::MediaRSS, "community") => media_obj.community = handle_media_community(element)?,
 
-        (NS::MediaRSS, "credit") => if_some_then(handle_media_credit(element), |credit| media_obj.credits.push(credit)),
+        (NS::MediaRSS, "credit") => if_some_then(handle_media_credit(element), |credit| {
+            media_obj.credits.push(credit)
+        }),
 
-        (NS::MediaRSS, "text") => if_some_then(handle_media_text(element), |text| media_obj.texts.push(text)),
+        (NS::MediaRSS, "text") => if_some_then(handle_media_text(element), |text| {
+            media_obj.texts.push(text)
+        }),
 
         (NS::MediaRSS, "rating") => rating = handle_media_rating(element),
 
@@ -66,7 +80,9 @@ pub(crate) fn handle_media_element<R: BufRead>(element: Element<R>, media_obj: &
 }
 
 // Handle "media:community"
-fn handle_media_community<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<MediaCommunity>> {
+fn handle_media_community<R: BufRead>(
+    element: Element<R>,
+) -> ParseFeedResult<Option<MediaCommunity>> {
     let mut community = MediaCommunity::new();
 
     for child in element.children() {
@@ -75,10 +91,18 @@ fn handle_media_community<R: BufRead>(element: Element<R>) -> ParseFeedResult<Op
             (NS::MediaRSS, "starRating") => {
                 for attr in &child.attributes {
                     match attr.name.as_str() {
-                        "average" => if_ok_then_some(attr.value.parse::<f64>(), |v| community.stars_avg = v),
-                        "count" => if_ok_then_some(attr.value.parse::<u64>(), |v| community.stars_count = v),
-                        "min" => if_ok_then_some(attr.value.parse::<u64>(), |v| community.stars_min = v),
-                        "max" => if_ok_then_some(attr.value.parse::<u64>(), |v| community.stars_max = v),
+                        "average" => {
+                            if_ok_then_some(attr.value.parse::<f64>(), |v| community.stars_avg = v)
+                        }
+                        "count" => if_ok_then_some(attr.value.parse::<u64>(), |v| {
+                            community.stars_count = v
+                        }),
+                        "min" => {
+                            if_ok_then_some(attr.value.parse::<u64>(), |v| community.stars_min = v)
+                        }
+                        "max" => {
+                            if_ok_then_some(attr.value.parse::<u64>(), |v| community.stars_max = v)
+                        }
 
                         // Nothing required for unknown attributes
                         _ => {}
@@ -88,8 +112,12 @@ fn handle_media_community<R: BufRead>(element: Element<R>) -> ParseFeedResult<Op
             (NS::MediaRSS, "statistics") => {
                 for attr in &child.attributes {
                     match attr.name.as_str() {
-                        "views" => if_ok_then_some(attr.value.parse::<u64>(), |v| community.stats_views = v),
-                        "favorites" => if_ok_then_some(attr.value.parse::<u64>(), |v| community.stats_favorites = v),
+                        "views" => if_ok_then_some(attr.value.parse::<u64>(), |v| {
+                            community.stats_views = v
+                        }),
+                        "favorites" => if_ok_then_some(attr.value.parse::<u64>(), |v| {
+                            community.stats_favorites = v
+                        }),
 
                         // Nothing required for unknown attributes
                         _ => {}
@@ -106,7 +134,10 @@ fn handle_media_community<R: BufRead>(element: Element<R>) -> ParseFeedResult<Op
 }
 
 // Handle the core attributes and elements from "media:content"
-fn handle_media_content<R: BufRead>(element: Element<R>, media_obj: &mut MediaObject) -> ParseFeedResult<()> {
+fn handle_media_content<R: BufRead>(
+    element: Element<R>,
+    media_obj: &mut MediaObject,
+) -> ParseFeedResult<()> {
     let mut content = MediaContent::new();
 
     // Extract attributes from the content element
@@ -114,14 +145,18 @@ fn handle_media_content<R: BufRead>(element: Element<R>, media_obj: &mut MediaOb
         match attr.name.as_str() {
             "url" => content.url = util::parse_uri(&attr.value, element.xml_base.as_ref()),
 
-            "type" => if_ok_then_some(attr.value.parse::<MediaTypeBuf>(), |v| content.content_type = v),
+            "type" => if_ok_then_some(attr.value.parse::<MediaTypeBuf>(), |v| {
+                content.content_type = v
+            }),
 
             "width" => if_ok_then_some(attr.value.parse::<u32>(), |v| content.width = v),
             "height" => if_ok_then_some(attr.value.parse::<u32>(), |v| content.height = v),
 
             "fileSize" => if_ok_then_some(attr.value.parse::<u64>(), |v| content.size = v),
 
-            "duration" => if_ok_then_some(attr.value.parse::<u64>(), |v| content.duration = v.map(Duration::from_secs)),
+            "duration" => if_ok_then_some(attr.value.parse::<u64>(), |v| {
+                content.duration = v.map(Duration::from_secs)
+            }),
 
             // Nothing required for unknown attributes
             _ => {}
@@ -159,8 +194,12 @@ fn handle_media_content<R: BufRead>(element: Element<R>, media_obj: &mut MediaOb
             }
 
             // These elements are accumulated in the corresponding field of the parent MediaObject
-            (NS::MediaRSS, "text") => if_some_then(handle_media_text(child), |text| media_obj.texts.push(text)),
-            (NS::MediaRSS, "credit") => if_some_then(handle_media_credit(child), |credit| media_obj.credits.push(credit)),
+            (NS::MediaRSS, "text") => {
+                if_some_then(handle_media_text(child), |text| media_obj.texts.push(text))
+            }
+            (NS::MediaRSS, "credit") => if_some_then(handle_media_credit(child), |credit| {
+                media_obj.credits.push(credit)
+            }),
 
             // Other elements in the namespace are handled recursively
             (NS::MediaRSS, _) => handle_media_element(child, media_obj)?,
@@ -187,9 +226,13 @@ fn handle_media_credit<R: BufRead>(element: Element<R>) -> Option<MediaCredit> {
 // Handles the "media:rating" element
 fn handle_media_rating<R: BufRead>(element: Element<R>) -> Option<MediaRating> {
     // Schema is "urn:simple" by default
-    let scheme = element.attr_value("scheme").unwrap_or_else(|| "urn:simple".into());
+    let scheme = element
+        .attr_value("scheme")
+        .unwrap_or_else(|| "urn:simple".into());
 
-    element.child_as_text().map(|rating| MediaRating::new(rating).urn(scheme.as_str()))
+    element
+        .child_as_text()
+        .map(|rating| MediaRating::new(rating).urn(scheme.as_str()))
 }
 
 // Handles the "media:text" element
@@ -267,14 +310,20 @@ fn handle_media_thumbnail<R: BufRead>(element: Element<R>) -> Option<MediaThumbn
 // Handles a title or description element
 fn handle_text<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Text>> {
     // Find type, defaulting to "plain" if not present
-    let type_attr = element.attributes.iter().find(|a| &a.name == "type").map_or("plain", |a| a.value.as_str());
+    let type_attr = element
+        .attributes
+        .iter()
+        .find(|a| &a.name == "type")
+        .map_or("plain", |a| a.value.as_str());
 
     let mime = match type_attr {
         "plain" => Ok(MediaTypeBuf::new(names::TEXT, names::PLAIN)),
         "html" => Ok(MediaTypeBuf::new(names::TEXT, names::HTML)),
 
         // Unknown content type
-        _ => Err(ParseFeedError::ParseError(ParseErrorKind::UnknownMimeType(type_attr.into()))),
+        _ => Err(ParseFeedError::ParseError(ParseErrorKind::UnknownMimeType(
+            type_attr.into(),
+        ))),
     }?;
 
     element
@@ -285,5 +334,7 @@ fn handle_text<R: BufRead>(element: Element<R>) -> ParseFeedResult<Option<Text>>
             Some(text)
         })
         // Need the text for a text element
-        .ok_or(ParseFeedError::ParseError(ParseErrorKind::MissingContent("text")))
+        .ok_or(ParseFeedError::ParseError(ParseErrorKind::MissingContent(
+            "text",
+        )))
 }

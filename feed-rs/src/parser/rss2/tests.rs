@@ -28,7 +28,9 @@ fn test_example_1() {
         .entry(
             Entry::default()
                 .title(Text::new("Example entry".into()))
-                .summary(Text::html("Here is some text containing an interesting description.".into()))
+                .summary(Text::html(
+                    "Here is some text containing an interesting description.".into(),
+                ))
                 .link(Link::new("http://www.example.com/blog/post/1", None))
                 .id("7bd204c6-1655-4c27-aeee-53f933c5395f")
                 .published("Sun, 06 Sep 2009 16:20:00 +0000")
@@ -328,7 +330,10 @@ fn test_invalid_1() {
 fn test_encoding_1() {
     let test_data = test::fixture_as_raw("rss2/rss_2.0_encoding_1.xml");
     let feed = parser::parse(test_data.as_slice()).unwrap();
-    assert_eq!(feed.title.unwrap().content, "RSS Feed do Site Inovação Tecnológica");
+    assert_eq!(
+        feed.title.unwrap().content,
+        "RSS Feed do Site Inovação Tecnológica"
+    );
 }
 
 // Verifies we extract the content:encoded element
@@ -337,8 +342,15 @@ fn test_heated() {
     let test_data = test::fixture_as_raw("rss2/rss_2.0_heated.xml");
     let feed = parser::parse(test_data.as_slice()).unwrap();
     let content = &feed.entries[0].content.as_ref().unwrap();
-    assert!(content.body.as_ref().unwrap().contains("I have some good news and some bad news"));
-    assert_eq!(content.content_type, MediaType::new(names::TEXT, names::HTML));
+    assert!(content
+        .body
+        .as_ref()
+        .unwrap()
+        .contains("I have some good news and some bad news"));
+    assert_eq!(
+        content.content_type,
+        MediaType::new(names::TEXT, names::HTML)
+    );
 }
 
 // Check reported issue that RockPaperShotgun does not extract summary
@@ -645,12 +657,18 @@ fn test_relurl_1() {
     let content = actual.entries[0].content.as_ref().unwrap();
     assert_eq!(
         content.src,
-        Some(Link::new("https://insanity.industries/post/pareto-optimal-compression/", None))
+        Some(Link::new(
+            "https://insanity.industries/post/pareto-optimal-compression/",
+            None
+        ))
     );
     let content = actual.entries[1].content.as_ref().unwrap();
     assert_eq!(
         content.src,
-        Some(Link::new("https://insanity.industries/post/pacman-tracking-leftover-packages/", None))
+        Some(Link::new(
+            "https://insanity.industries/post/pacman-tracking-leftover-packages/",
+            None
+        ))
     );
 }
 
@@ -667,7 +685,10 @@ fn test_relurl_2() {
 
     // The link for the enclosure should be absolute
     let content = &actual.entries[0].media[0].content[0];
-    assert_eq!(content.url, Url::parse("http://example.com/images/me/hackergotchi-simpler.png").ok());
+    assert_eq!(
+        content.url,
+        Url::parse("http://example.com/images/me/hackergotchi-simpler.png").ok()
+    );
 }
 
 // Verify that attributes containing escaped characters are decoded correctly
@@ -697,7 +718,11 @@ fn test_ghost_no_ws() {
 // Verifies that we extract the 'content:encoded' element correctly from a variety of problematic feeds
 #[test]
 fn test_ghost_feeds() {
-    let files = vec!["rss_2.0_ghost_2.xml", "rss_2.0_cloudflare.xml", "rss_2.0_element_io.xml"];
+    let files = vec![
+        "rss_2.0_ghost_2.xml",
+        "rss_2.0_cloudflare.xml",
+        "rss_2.0_element_io.xml",
+    ];
     for file in files {
         let test_data = test::fixture_as_string(&format!("rss2/{}", file));
         let actual = parser::parse(test_data.as_bytes()).unwrap();
@@ -726,7 +751,10 @@ fn test_rfc1123_ilgiornale() {
     let entry = actual.entries.first().expect("feed has 1 entry");
 
     // Should have the expected date
-    assert_eq!(entry.published.unwrap(), Utc.with_ymd_and_hms(2022, 11, 15, 20, 15, 4).unwrap());
+    assert_eq!(
+        entry.published.unwrap(),
+        Utc.with_ymd_and_hms(2022, 11, 15, 20, 15, 4).unwrap()
+    );
 }
 
 // Verifies we can handle an RFC1123 date in an RSS 2.0 feed where the week day name is in a different language
@@ -737,7 +765,10 @@ fn test_rfc1123_ilmessaggero() {
     let entry = actual.entries.first().expect("feed has 1 entry");
 
     // Should have the expected date
-    assert_eq!(entry.published.unwrap(), Utc.with_ymd_and_hms(2022, 11, 15, 23, 38, 15).unwrap());
+    assert_eq!(
+        entry.published.unwrap(),
+        Utc.with_ymd_and_hms(2022, 11, 15, 23, 38, 15).unwrap()
+    );
 }
 
 // Verifies we trim leading and trailing whitespace in text fields
@@ -747,13 +778,27 @@ fn test_trim_whitespace_text_nodes() {
     let test_data = test::fixture_as_string("rss2/rss_2.0_nightvale.xml");
     let actual = parser::parse(test_data.as_bytes()).unwrap();
 
-    assert!(actual.description.unwrap().content.starts_with("<p>Twice-monthly community updates"));
+    assert!(actual
+        .description
+        .unwrap()
+        .content
+        .starts_with("<p>Twice-monthly community updates"));
 
     let entry = actual.entries.first().expect("feed has 1 entry");
-    assert!(entry.summary.as_ref().unwrap().content.starts_with("<p>The University of What It Is"));
+    assert!(entry
+        .summary
+        .as_ref()
+        .unwrap()
+        .content
+        .starts_with("<p>The University of What It Is"));
 
     let media = entry.media.first().expect("entry has 1 media item");
-    assert!(media.description.as_ref().unwrap().content.starts_with("The University of What It Is"));
+    assert!(media
+        .description
+        .as_ref()
+        .unwrap()
+        .content
+        .starts_with("The University of What It Is"));
 }
 
 // Verifies we use DublinCore date as entry published date if present
@@ -762,7 +807,10 @@ fn test_published_from_dc_date() {
     let test_data = test::fixture_as_string("rss2/rss_2.0_dbengines.xml");
     let actual = parser::parse(test_data.as_bytes()).unwrap();
     let entry = actual.entries.first().expect("feed has 1 entry");
-    assert_eq!(entry.published.unwrap(), Utc.with_ymd_and_hms(2023, 1, 3, 15, 0, 0).unwrap());
+    assert_eq!(
+        entry.published.unwrap(),
+        Utc.with_ymd_and_hms(2023, 1, 3, 15, 0, 0).unwrap()
+    );
 }
 
 // Verifies that an custom parser is correctly called and can return a useful date
@@ -782,7 +830,10 @@ fn test_custom_timestamp_parser() {
         .parse(test_data.as_bytes())
         .unwrap();
     let entry = actual.entries.first().expect("feed has 1 entry");
-    assert_eq!(entry.published.unwrap(), Utc.with_ymd_and_hms(2023, 12, 16, 19, 2, 33).unwrap());
+    assert_eq!(
+        entry.published.unwrap(),
+        Utc.with_ymd_and_hms(2023, 12, 16, 19, 2, 33).unwrap()
+    );
 }
 
 // Verifies we correctly extract subcategories from the iTunes NS
@@ -806,5 +857,8 @@ fn test_media_content_player() {
 
     let entry = &actual.entries[0];
     let content_url = entry.media[0].content[0].url.as_ref().unwrap();
-    assert_eq!("https://player.vimeo.com/video/1013595996?h=b1b80eff69", content_url.as_str());
+    assert_eq!(
+        "https://player.vimeo.com/video/1013595996?h=b1b80eff69",
+        content_url.as_str()
+    );
 }

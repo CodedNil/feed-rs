@@ -63,7 +63,9 @@ impl fmt::Display for ParseFeedError {
             ParseFeedError::ParseError(pe) => write!(f, "unable to parse feed: {}", pe),
             ParseFeedError::IoError(ie) => write!(f, "unable to read feed: {}", ie),
             ParseFeedError::JsonSerde(je) => write!(f, "unable to parse JSON: {}", je),
-            ParseFeedError::JsonUnsupportedVersion(version) => write!(f, "unsupported version: {}", version),
+            ParseFeedError::JsonUnsupportedVersion(version) => {
+                write!(f, "unsupported version: {}", version)
+            }
             ParseFeedError::XmlReader(xe) => write!(f, "unable to parse XML: {}", xe),
         }
     }
@@ -146,7 +148,11 @@ impl Parser {
 
         // Determine whether this is XML or JSON and call the appropriate parser
         input.fill_buf()?;
-        let first_char = input.buffer().iter().find(|b| **b == b'<' || **b == b'{').map(|b| *b as char);
+        let first_char = input
+            .buffer()
+            .iter()
+            .find(|b| **b == b'<' || **b == b'{')
+            .map(|b| *b as char);
         let result = match first_char {
             Some('<') => self.parse_xml(input),
 
@@ -325,7 +331,11 @@ const LINK_HASH_KEY2: u64 = 0x90ee_ca4c_90a5_e228;
 // 1) the first link + optional title
 // 2) the uri + title provided
 // 3) a UUID
-pub fn generate_id(links: &[model::Link], title: &Option<model::Text>, uri: Option<&str>) -> String {
+pub fn generate_id(
+    links: &[model::Link],
+    title: &Option<model::Text>,
+    uri: Option<&str>,
+) -> String {
     if let Some(link) = links.first() {
         generate_id_from_link_and_title(link, title)
     } else if let (Some(uri), Some(title)) = (uri, title) {

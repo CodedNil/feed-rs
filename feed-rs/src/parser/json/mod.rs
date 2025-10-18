@@ -32,11 +32,15 @@ fn convert(parser: &Parser, jf: JsonFeed) -> ParseFeedResult<Feed> {
     // Convert feed level fields
     feed.title = Some(Text::new(jf.title));
 
-    if_some_then(jf.home_page_url, |uri| feed.links.push(Link::new(uri, None)));
+    if_some_then(jf.home_page_url, |uri| {
+        feed.links.push(Link::new(uri, None))
+    });
 
     if_some_then(jf.feed_url, |uri| feed.links.push(Link::new(uri, None)));
 
-    if_some_then(jf.description, |text| feed.description = Some(Text::new(text)));
+    if_some_then(jf.description, |text| {
+        feed.description = Some(Text::new(text))
+    });
 
     if_some_then(jf.icon, |uri| feed.logo = Some(Image::new(uri)));
 
@@ -87,7 +91,11 @@ fn handle_attachment(attachment: JsonAttachment) -> Link {
 }
 
 // Converts author / authors objects into our model
-fn handle_authors(accumulated: &mut Vec<Person>, author: &Option<JsonAuthor>, authors: &Option<Vec<JsonAuthor>>) {
+fn handle_authors(
+    accumulated: &mut Vec<Person>,
+    author: &Option<JsonAuthor>,
+    authors: &Option<Vec<JsonAuthor>>,
+) {
     if let Some(ja) = author {
         accumulate_author(accumulated, ja);
     }
@@ -102,7 +110,7 @@ fn handle_authors(accumulated: &mut Vec<Person>, author: &Option<JsonAuthor>, au
 // Handles HTML or plain text content
 fn handle_content(content: Option<String>, content_type: MediaTypeBuf) -> Option<Content> {
     content.map(|body| Content {
-        length: Some(body.as_bytes().len() as u64),
+        length: Some(body.len() as u64),
         body: Some(body.trim().into()),
         content_type,
         ..Default::default()
@@ -118,14 +126,19 @@ fn handle_item(parser: &Parser, ji: JsonItem) -> Entry {
 
     if_some_then(ji.url, |uri| entry.links.push(Link::new(uri, None)));
 
-    if_some_then(ji.external_url, |uri| entry.links.push(Link::new(uri, None)));
+    if_some_then(ji.external_url, |uri| {
+        entry.links.push(Link::new(uri, None))
+    });
 
     if_some_then(ji.title, |text| entry.title = Some(Text::new(text)));
 
     // Content HTML, content text and summary are mapped across to our model with the preference toward HTML and explicit summary fields
     entry.content = handle_content(ji.content_html, MediaTypeBuf::new(names::TEXT, names::HTML));
     entry.summary = ji.summary.map(Text::new);
-    if let Some(content_text) = handle_content(ji.content_text, MediaTypeBuf::new(names::TEXT, names::PLAIN)) {
+    if let Some(content_text) = handle_content(
+        ji.content_text,
+        MediaTypeBuf::new(names::TEXT, names::PLAIN),
+    ) {
         // If we don't have HTML content, use the text content as the entry content
         // otherwise, if the summary was not provided, we push the text there
 
@@ -136,18 +149,27 @@ fn handle_item(parser: &Parser, ji: JsonItem) -> Entry {
         }
     }
 
-    if_some_then(ji.date_published, |published| entry.published = parser.parse_timestamp(&published));
+    if_some_then(ji.date_published, |published| {
+        entry.published = parser.parse_timestamp(&published)
+    });
 
-    if_some_then(ji.date_modified, |modified| entry.updated = parser.parse_timestamp(&modified));
+    if_some_then(ji.date_modified, |modified| {
+        entry.updated = parser.parse_timestamp(&modified)
+    });
 
     handle_authors(&mut entry.authors, &ji.author, &ji.authors);
 
     if_some_then(ji.tags, |tags| {
-        tags.into_iter().map(|t| Category::new(&t)).for_each(|category| entry.categories.push(category))
+        tags.into_iter()
+            .map(|t| Category::new(&t))
+            .for_each(|category| entry.categories.push(category))
     });
 
     if_some_then(ji.attachments, |attachments| {
-        attachments.into_iter().map(handle_attachment).for_each(|link| entry.links.push(link))
+        attachments
+            .into_iter()
+            .map(handle_attachment)
+            .for_each(|link| entry.links.push(link))
     });
 
     // Per the JSON Feed spec, "the only place HTML is allowed in this format is in content_html";

@@ -70,7 +70,9 @@ impl<R: BufRead> ElementSource<R> {
             // Fetch the next event
             if let Some(event) = peeked.as_ref().unwrap() {
                 match event {
-                    XmlEvent::Start { name, attributes, .. } => {
+                    XmlEvent::Start {
+                        name, attributes, ..
+                    } => {
                         // Note that we have descended into an element
                         current_depth += 1;
 
@@ -113,7 +115,11 @@ impl<R: BufRead> ElementSource<R> {
         while let Some(node) = state.next()? {
             match node {
                 // The start of an element may be interesting to the iterator
-                XmlEvent::Start { name, attributes, namespace } => {
+                XmlEvent::Start {
+                    name,
+                    attributes,
+                    namespace,
+                } => {
                     // Starting an element increases our depth
                     state.current_depth += 1;
 
@@ -200,7 +206,10 @@ impl<R: BufRead> ElementSource<R> {
     // Pushes an updated xml-base on to the stack as required
     fn xml_base_push(state: &mut SourceState<R>, attributes: &[NameValue]) -> XmlResult<()> {
         // Find the xml-base attribute
-        let xml_base = attributes.iter().find(|nv| nv.name == "xml:base").map(|nv| &nv.value);
+        let xml_base = attributes
+            .iter()
+            .find(|nv| nv.name == "xml:base")
+            .map(|nv| &nv.value);
 
         if let Some(xml_base) = xml_base {
             match Url::parse(xml_base) {
@@ -354,7 +363,10 @@ pub(crate) struct Element<'a, R: BufRead> {
 impl<'a, R: BufRead> Element<'a, R> {
     /// Returns the value for an attribute if it exists
     pub(crate) fn attr_value(&self, name: &str) -> Option<String> {
-        self.attributes.iter().find(|a| a.name == name).map(|a| a.value.clone())
+        self.attributes
+            .iter()
+            .find(|a| a.name == name)
+            .map(|a| a.value.clone())
     }
 
     /// If the first child of the current node is XML characters, then it is returned as a `String` otherwise `None`.
@@ -376,7 +388,8 @@ impl<'a, R: BufRead> Element<'a, R> {
     pub(crate) fn children_as_string(&self) -> XmlResult<Option<String>> {
         // Fill the buffer with the XML content below this element
         let mut buffer = String::new();
-        self.source.children_as_string(self.depth + 1, &mut buffer)?;
+        self.source
+            .children_as_string(self.depth + 1, &mut buffer)?;
 
         Ok(Some(buffer))
     }
@@ -452,10 +465,18 @@ pub(crate) struct NameValue {
 /// Errors for the underlying parser
 #[derive(Debug)]
 pub enum XmlError {
-    Parser { e: quick_xml::Error },
-    Url { e: url::ParseError },
-    Encoding { e: quick_xml::encoding::EncodingError },
-    Escape { e: quick_xml::escape::EscapeError },
+    Parser {
+        e: quick_xml::Error,
+    },
+    Url {
+        e: url::ParseError,
+    },
+    Encoding {
+        e: quick_xml::encoding::EncodingError,
+    },
+    Escape {
+        e: quick_xml::escape::EscapeError,
+    },
 }
 
 impl fmt::Display for XmlError {
@@ -498,9 +519,15 @@ impl From<quick_xml::escape::EscapeError> for XmlError {
 // Abstraction over the underlying XML reader event model
 enum XmlEvent {
     // An XML start tag
-    Start { namespace: NS, name: String, attributes: Vec<NameValue> },
+    Start {
+        namespace: NS,
+        name: String,
+        attributes: Vec<NameValue>,
+    },
     // An XML end tag
-    End { name: String },
+    End {
+        name: String,
+    },
     // Text or CData
     Text(String),
 }
@@ -548,14 +575,21 @@ impl XmlEvent {
                         .unwrap_or_else(|_| decoded_value.clone())
                         .to_string();
 
-                    Some(NameValue { name: name.into(), value })
+                    Some(NameValue {
+                        name: name.into(),
+                        value,
+                    })
                 } else {
                     None
                 }
             })
             .collect::<Vec<NameValue>>();
 
-        XmlEvent::Start { namespace, name, attributes }
+        XmlEvent::Start {
+            namespace,
+            name,
+            attributes,
+        }
     }
 
     // Creates a new event corresponding to an XML text node
@@ -572,7 +606,10 @@ impl XmlEvent {
 
     // Creates a new event from the corresponding cdata
     // No need to unescape in this case given cdata is "raw"
-    fn text_from_cdata<R: BufRead>(cdata: &BytesCData, reader: &Reader<R>) -> XmlResult<Option<XmlEvent>> {
+    fn text_from_cdata<R: BufRead>(
+        cdata: &BytesCData,
+        reader: &Reader<R>,
+    ) -> XmlResult<Option<XmlEvent>> {
         if cdata.is_empty() {
             Ok(None)
         } else {
